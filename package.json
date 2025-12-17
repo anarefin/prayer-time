@@ -1,0 +1,20 @@
+{
+  "name": "prayer-time-firestore-setup",
+  "version": "1.0.0",
+  "description": "Firestore initialization for Prayer Time app",
+  "main": "init-firestore.js",
+  "scripts": {
+    "init": "node init-firestore.js",
+    "setup": "npm install && node init-firestore.js"
+  },
+  "keywords": [
+    "firebase",
+    "firestore",
+    "prayer-time"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

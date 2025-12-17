@@ -1,0 +1,81 @@
+{
+  "users": {
+    "6fAVoF9OgtYKI70a2ZDDjyafEhE2": {
+      "email": "arefin@arefin.com",
+      "role": "admin",
+      "favorites": []
+    },
+    "DSpqEl1rjzZjWdOzxRVjQ8g1lNj2": {
+      "email": "test@test.com",
+      "role": "user",
+      "favorites": []
+    }
+  },
+  "areas": {
+    "area_kl_001": {
+      "name": "Kuala Lumpur",
+      "order": 1
+    },
+    "area_selangor_001": {
+      "name": "Selangor",
+      "order": 2
+    },
+    "area_putrajaya_001": {
+      "name": "Putrajaya",
+      "order": 3
+    }
+  },
+  "mosques": {
+    "mosque_kl_001": {
+      "name": "Masjid Wilayah Persekutuan",
+      "address": "Jalan Duta, 50480 Kuala Lumpur",
+      "areaId": "area_kl_001",
+      "latitude": 3.1569,
+      "longitude": 101.7123
+    },
+    "mosque_kl_002": {
+      "name": "Masjid Negara",
+      "address": "Jalan Perdana, 50480 Kuala Lumpur",
+      "areaId": "area_kl_001",
+      "latitude": 3.1419,
+      "longitude": 101.6911
+    },
+    "mosque_selangor_001": {
+      "name": "Masjid Sultan Salahuddin Abdul Aziz Shah",
+      "address": "Persiaran Masjid St., 40000 Shah Alam",
+      "areaId": "area_selangor_001",
+      "latitude": 3.0733,
+      "longitude": 101.5201
+    }
+  },
+  "prayer_times": {
+    "mosque_kl_001_2024-12-18": {
+      "mosqueId": "mosque_kl_001",
+      "date": "2024-12-18",
+      "fajr": "05:45",
+      "dhuhr": "13:15",
+      "asr": "16:30",
+      "maghrib": "19:15",
+      "isha": "20:30"
+    },
+    "mosque_kl_002_2024-12-18": {
+      "mosqueId": "mosque_kl_002",
+      "date": "2024-12-18",
+      "fajr": "05:45",
+      "dhuhr": "13:15",
+      "asr": "16:30",
+      "maghrib": "19:15",
+      "isha": "20:30"
+    },
+    "mosque_selangor_001_2024-12-18": {
+      "mosqueId": "mosque_selangor_001",
+      "date": "2024-12-18",
+      "fajr": "05:50",
+      "dhuhr": "13:20",
+      "asr": "16:35",
+      "maghrib": "19:20",
+      "isha": "20:35"
+    }
+  }
+}
+

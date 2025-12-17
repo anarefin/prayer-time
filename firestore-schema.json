@@ -1,0 +1,158 @@
+{
+  "collections": {
+    "users": {
+      "description": "User accounts with roles and favorites",
+      "documentId": "Auto-generated (Firebase Auth UID)",
+      "fields": {
+        "email": {
+          "type": "string",
+          "required": true,
+          "description": "User's email address",
+          "example": "user@example.com"
+        },
+        "role": {
+          "type": "string",
+          "required": true,
+          "description": "User role: 'admin' or 'user'",
+          "example": "user",
+          "enum": ["admin", "user"]
+        },
+        "favorites": {
+          "type": "array",
+          "required": true,
+          "description": "Array of mosque IDs user has favorited",
+          "example": ["mosque1", "mosque2"],
+          "default": []
+        }
+      },
+      "sampleDocument": {
+        "email": "admin@prayer.com",
+        "role": "admin",
+        "favorites": []
+      }
+    },
+    "areas": {
+      "description": "Geographical areas/locations",
+      "documentId": "Auto-generated or custom",
+      "fields": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Area name",
+          "example": "Kuala Lumpur"
+        },
+        "order": {
+          "type": "number",
+          "required": true,
+          "description": "Display order (for sorting)",
+          "example": 1
+        }
+      },
+      "sampleDocument": {
+        "name": "Kuala Lumpur",
+        "order": 1
+      }
+    },
+    "mosques": {
+      "description": "Mosques with location data",
+      "documentId": "Auto-generated or custom",
+      "fields": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Mosque name",
+          "example": "Masjid Wilayah"
+        },
+        "address": {
+          "type": "string",
+          "required": true,
+          "description": "Full address",
+          "example": "Jalan Duta, Kuala Lumpur"
+        },
+        "areaId": {
+          "type": "string",
+          "required": true,
+          "description": "Reference to area document ID",
+          "example": "area_kl_001"
+        },
+        "latitude": {
+          "type": "number",
+          "required": true,
+          "description": "GPS latitude coordinate",
+          "example": 3.1569
+        },
+        "longitude": {
+          "type": "number",
+          "required": true,
+          "description": "GPS longitude coordinate",
+          "example": 101.7123
+        }
+      },
+      "sampleDocument": {
+        "name": "Masjid Wilayah Persekutuan",
+        "address": "Jalan Duta, 50480 Kuala Lumpur",
+        "areaId": "area_kl_001",
+        "latitude": 3.1569,
+        "longitude": 101.7123
+      }
+    },
+    "prayer_times": {
+      "description": "Prayer times for specific mosque and date",
+      "documentId": "Format: {mosqueId}_{date} (e.g., mosque1_2024-01-15)",
+      "fields": {
+        "mosqueId": {
+          "type": "string",
+          "required": true,
+          "description": "Reference to mosque document ID",
+          "example": "mosque1"
+        },
+        "date": {
+          "type": "string",
+          "required": true,
+          "description": "Date in YYYY-MM-DD format",
+          "example": "2024-01-15"
+        },
+        "fajr": {
+          "type": "string",
+          "required": true,
+          "description": "Fajr prayer time in HH:mm format",
+          "example": "05:45"
+        },
+        "dhuhr": {
+          "type": "string",
+          "required": true,
+          "description": "Dhuhr prayer time in HH:mm format",
+          "example": "13:15"
+        },
+        "asr": {
+          "type": "string",
+          "required": true,
+          "description": "Asr prayer time in HH:mm format",
+          "example": "16:30"
+        },
+        "maghrib": {
+          "type": "string",
+          "required": true,
+          "description": "Maghrib prayer time in HH:mm format",
+          "example": "19:15"
+        },
+        "isha": {
+          "type": "string",
+          "required": true,
+          "description": "Isha prayer time in HH:mm format",
+          "example": "20:30"
+        }
+      },
+      "sampleDocument": {
+        "mosqueId": "mosque1",
+        "date": "2024-12-18",
+        "fajr": "05:45",
+        "dhuhr": "13:15",
+        "asr": "16:30",
+        "maghrib": "19:15",
+        "isha": "20:30"
+      }
+    }
+  }
+}
+

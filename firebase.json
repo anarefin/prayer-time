@@ -1,0 +1,25 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "prayer-time-df24c",
+          "appId": "1:999151130230:android:d3334f4623f79fa6bf7157",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "prayer-time-df24c",
+          "configurations": {
+            "android": "1:999151130230:android:d3334f4623f79fa6bf7157"
+          }
+        }
+      }
+    }
+  }
+}
