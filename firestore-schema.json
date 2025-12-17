@@ -141,6 +141,12 @@
           "required": true,
           "description": "Isha prayer time in HH:mm format",
           "example": "20:30"
+        },
+        "jummah": {
+          "type": "string",
+          "required": false,
+          "description": "Jummah (Friday) prayer time in HH:mm format - only for Fridays",
+          "example": "13:00"
         }
       },
       "sampleDocument": {
@@ -150,7 +156,8 @@
         "dhuhr": "13:15",
         "asr": "16:30",
         "maghrib": "19:15",
-        "isha": "20:30"
+        "isha": "20:30",
+        "jummah": "13:00"
       }
     }
   }

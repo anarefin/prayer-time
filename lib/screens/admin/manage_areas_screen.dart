@@ -238,6 +238,7 @@ class _AddEditAreaDialogState extends State<_AddEditAreaDialog> {
     final area = Area(
       id: widget.area?.id ?? '',
       name: _nameController.text.trim(),
+      districtId: widget.area?.districtId ?? '',
       order: int.parse(_orderController.text),
     );
 

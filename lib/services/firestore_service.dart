@@ -1,4 +1,6 @@
+import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/district.dart';
 import '../models/area.dart';
 import '../models/mosque.dart';
 import '../models/prayer_time.dart';
@@ -7,6 +9,82 @@ import '../models/user_model.dart';
 /// Service for handling all Firestore database operations
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // ==================== DISTRICTS ====================
+
+  /// Get all districts as a stream
+  Stream<List<District>> getDistrictsStream() {
+    return _firestore
+        .collection('districts')
+        .orderBy('order')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => District.fromJson(doc.data(), doc.id))
+          .toList();
+    });
+  }
+
+  /// Get all districts (one-time fetch)
+  Future<List<District>> getDistricts() async {
+    final snapshot =
+        await _firestore.collection('districts').orderBy('order').get();
+    return snapshot.docs
+        .map((doc) => District.fromJson(doc.data(), doc.id))
+        .toList();
+  }
+
+  /// Get districts by division
+  Future<List<District>> getDistrictsByDivision(String divisionName) async {
+    final snapshot = await _firestore
+        .collection('districts')
+        .where('divisionName', isEqualTo: divisionName)
+        .orderBy('order')
+        .get();
+    return snapshot.docs
+        .map((doc) => District.fromJson(doc.data(), doc.id))
+        .toList();
+  }
+
+  /// Get a single district by ID
+  Future<District?> getDistrict(String districtId) async {
+    final doc = await _firestore.collection('districts').doc(districtId).get();
+    if (doc.exists) {
+      return District.fromJson(doc.data()!, doc.id);
+    }
+    return null;
+  }
+
+  /// Add a new district
+  Future<String> addDistrict(District district) async {
+    final docRef =
+        await _firestore.collection('districts').add(district.toJson());
+    return docRef.id;
+  }
+
+  /// Update a district
+  Future<void> updateDistrict(District district) async {
+    await _firestore
+        .collection('districts')
+        .doc(district.id)
+        .update(district.toJson());
+  }
+
+  /// Delete a district
+  Future<void> deleteDistrict(String districtId) async {
+    // Check if any areas exist in this district
+    final areasSnapshot = await _firestore
+        .collection('areas')
+        .where('districtId', isEqualTo: districtId)
+        .limit(1)
+        .get();
+
+    if (areasSnapshot.docs.isNotEmpty) {
+      throw 'Cannot delete district with existing areas';
+    }
+
+    await _firestore.collection('districts').doc(districtId).delete();
+  }
 
   // ==================== AREAS ====================
 
@@ -30,6 +108,32 @@ class FirestoreService {
     return snapshot.docs
         .map((doc) => Area.fromJson(doc.data(), doc.id))
         .toList();
+  }
+
+  /// Get areas by district ID
+  Future<List<Area>> getAreasByDistrict(String districtId) async {
+    final snapshot = await _firestore
+        .collection('areas')
+        .where('districtId', isEqualTo: districtId)
+        .orderBy('order')
+        .get();
+    return snapshot.docs
+        .map((doc) => Area.fromJson(doc.data(), doc.id))
+        .toList();
+  }
+
+  /// Get areas by district ID as a stream
+  Stream<List<Area>> getAreasByDistrictStream(String districtId) {
+    return _firestore
+        .collection('areas')
+        .where('districtId', isEqualTo: districtId)
+        .orderBy('order')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => Area.fromJson(doc.data(), doc.id))
+          .toList();
+    });
   }
 
   /// Add a new area
@@ -157,6 +261,71 @@ class FirestoreService {
         .toList();
   }
 
+  /// Get nearby mosques within a radius (in kilometers)
+  /// Note: This requires client-side filtering as Firestore doesn't support geo-queries natively
+  /// For production, consider using GeoFlutterFire or similar packages
+  Future<List<Mosque>> getMosquesNearby(
+    double userLat,
+    double userLng,
+    double radiusKm,
+  ) async {
+    // Get all mosques (in production, limit this with bounding box)
+    final snapshot = await _firestore.collection('mosques').get();
+    
+    final mosques = snapshot.docs
+        .map((doc) => Mosque.fromJson(doc.data(), doc.id))
+        .toList();
+
+    // Filter by distance
+    final nearbyMosques = <Mosque>[];
+    for (final mosque in mosques) {
+      final distance = _calculateDistance(
+        userLat,
+        userLng,
+        mosque.latitude,
+        mosque.longitude,
+      );
+      if (distance <= radiusKm) {
+        nearbyMosques.add(mosque);
+      }
+    }
+
+    // Sort by distance
+    nearbyMosques.sort((a, b) {
+      final distA = _calculateDistance(userLat, userLng, a.latitude, a.longitude);
+      final distB = _calculateDistance(userLat, userLng, b.latitude, b.longitude);
+      return distA.compareTo(distB);
+    });
+
+    return nearbyMosques;
+  }
+
+  /// Calculate distance between two coordinates using Haversine formula
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const double earthRadius = 6371; // Earth's radius in kilometers
+
+    final dLat = _degreesToRadians(lat2 - lat1);
+    final dLon = _degreesToRadians(lon2 - lon1);
+
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degreesToRadians(lat1)) *
+            math.cos(_degreesToRadians(lat2)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+
+    final c = 2 * math.asin(math.sqrt(a));
+    return earthRadius * c;
+  }
+
+  double _degreesToRadians(double degrees) {
+    return degrees * math.pi / 180.0;
+  }
+
   // ==================== PRAYER TIMES ====================
 
   /// Get prayer times for a specific mosque and date
@@ -205,6 +374,94 @@ class FirestoreService {
         .collection('prayer_times')
         .doc(prayerTime.id)
         .set(prayerTime.toJson());
+  }
+
+  /// Set prayer times for a date range
+  Future<void> setPrayerTimeRange(
+    String mosqueId,
+    DateTime startDate,
+    DateTime endDate,
+    DateTime fajr,
+    DateTime dhuhr,
+    DateTime asr,
+    DateTime maghrib,
+    DateTime isha,
+    DateTime? jummah,
+  ) async {
+    final batch = _firestore.batch();
+    int batchCount = 0;
+
+    DateTime currentDate = startDate;
+    while (currentDate.isBefore(endDate) ||
+        currentDate.isAtSameMomentAs(endDate)) {
+      final prayerTime = PrayerTime(
+        id: PrayerTime.generateId(mosqueId, currentDate),
+        mosqueId: mosqueId,
+        date: currentDate,
+        fajr: DateTime(
+          currentDate.year,
+          currentDate.month,
+          currentDate.day,
+          fajr.hour,
+          fajr.minute,
+        ),
+        dhuhr: DateTime(
+          currentDate.year,
+          currentDate.month,
+          currentDate.day,
+          dhuhr.hour,
+          dhuhr.minute,
+        ),
+        asr: DateTime(
+          currentDate.year,
+          currentDate.month,
+          currentDate.day,
+          asr.hour,
+          asr.minute,
+        ),
+        maghrib: DateTime(
+          currentDate.year,
+          currentDate.month,
+          currentDate.day,
+          maghrib.hour,
+          maghrib.minute,
+        ),
+        isha: DateTime(
+          currentDate.year,
+          currentDate.month,
+          currentDate.day,
+          isha.hour,
+          isha.minute,
+        ),
+        jummah: jummah != null
+            ? DateTime(
+                currentDate.year,
+                currentDate.month,
+                currentDate.day,
+                jummah.hour,
+                jummah.minute,
+              )
+            : null,
+      );
+
+      final docRef = _firestore.collection('prayer_times').doc(prayerTime.id);
+      batch.set(docRef, prayerTime.toJson());
+
+      batchCount++;
+
+      // Firestore batch limit is 500 operations
+      if (batchCount >= 500) {
+        await batch.commit();
+        batchCount = 0;
+      }
+
+      currentDate = currentDate.add(const Duration(days: 1));
+    }
+
+    // Commit remaining operations
+    if (batchCount > 0) {
+      await batch.commit();
+    }
   }
 
   /// Delete prayer time

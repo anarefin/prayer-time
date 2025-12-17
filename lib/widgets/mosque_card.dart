@@ -8,6 +8,7 @@ class MosqueCard extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback? onFavoriteToggle;
   final bool showFavoriteButton;
+  final bool showFacilities;
 
   const MosqueCard({
     Key? key,
@@ -16,6 +17,7 @@ class MosqueCard extends StatelessWidget {
     this.isFavorite = false,
     this.onFavoriteToggle,
     this.showFavoriteButton = true,
+    this.showFacilities = true,
   }) : super(key: key);
 
   @override
@@ -76,6 +78,10 @@ class MosqueCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (showFacilities) ...[
+                      const SizedBox(height: 8),
+                      _buildFacilitiesRow(),
+                    ],
                   ],
                 ),
               ),
@@ -102,6 +108,101 @@ class MosqueCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFacilitiesRow() {
+    final facilities = <Map<String, dynamic>>[];
+    
+    if (mosque.hasWomenPrayer) {
+      facilities.add({
+        'icon': Icons.woman,
+        'color': Colors.purple,
+        'label': 'Women',
+      });
+    }
+    if (mosque.hasCarParking) {
+      facilities.add({
+        'icon': Icons.local_parking,
+        'color': Colors.blue,
+        'label': 'Car',
+      });
+    }
+    if (mosque.hasBikeParking) {
+      facilities.add({
+        'icon': Icons.two_wheeler,
+        'color': Colors.orange,
+        'label': 'Bike',
+      });
+    }
+    if (mosque.hasCycleParking) {
+      facilities.add({
+        'icon': Icons.pedal_bike,
+        'color': Colors.green,
+        'label': 'Cycle',
+      });
+    }
+    if (mosque.hasWudu) {
+      facilities.add({
+        'icon': Icons.water_drop,
+        'color': Colors.lightBlue,
+        'label': 'Wudu',
+      });
+    }
+    if (mosque.hasAC) {
+      facilities.add({
+        'icon': Icons.ac_unit,
+        'color': Colors.cyan,
+        'label': 'AC',
+      });
+    }
+    if (mosque.isWheelchairAccessible) {
+      facilities.add({
+        'icon': Icons.accessible,
+        'color': Colors.teal,
+        'label': 'Wheelchair',
+      });
+    }
+
+    if (facilities.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: facilities.map((facility) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          decoration: BoxDecoration(
+            color: (facility['color'] as Color).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: (facility['color'] as Color).withOpacity(0.3),
+              width: 0.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                facility['icon'] as IconData,
+                size: 12,
+                color: facility['color'] as Color,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                facility['label'] as String,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: facility['color'] as Color,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }

@@ -1,10 +1,14 @@
 import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../utils/constants.dart';
+import '../models/mosque.dart';
+import 'firestore_service.dart';
 
 /// Service for handling location and Qibla direction calculations
 class LocationService {
+  final FirestoreService _firestoreService = FirestoreService();
   /// Check if location services are enabled
   Future<bool> isLocationServiceEnabled() async {
     return await Geolocator.isLocationServiceEnabled();
@@ -161,8 +165,107 @@ class LocationService {
   }
 
   /// Open app settings (for permission management)
-  Future<void> openAppSettings() async {
+  Future<void> openSettings() async {
     await openAppSettings();
+  }
+
+  /// Find the nearest mosque to user's current location
+  Future<Mosque?> findNearestMosque() async {
+    try {
+      final position = await getCurrentPosition();
+      final nearbyMosques = await _firestoreService.getMosquesNearby(
+        position.latitude,
+        position.longitude,
+        50, // Search within 50km radius
+      );
+
+      if (nearbyMosques.isEmpty) return null;
+
+      return nearbyMosques.first; // Already sorted by distance
+    } catch (e) {
+      throw 'Failed to find nearest mosque: $e';
+    }
+  }
+
+  /// Get mosques within a specific radius (in kilometers)
+  Future<List<Mosque>> getMosquesWithinRadius(double radiusKm) async {
+    try {
+      final position = await getCurrentPosition();
+      return await _firestoreService.getMosquesNearby(
+        position.latitude,
+        position.longitude,
+        radiusKm,
+      );
+    } catch (e) {
+      throw 'Failed to get nearby mosques: $e';
+    }
+  }
+
+  /// Get Google Maps directions URL for a mosque
+  String getDirectionsUrl(double destinationLat, double destinationLng) {
+    return 'https://www.google.com/maps/dir/?api=1&destination=$destinationLat,$destinationLng&travelmode=driving';
+  }
+
+  /// Open Google Maps navigation to a mosque
+  Future<void> openNavigation(double destinationLat, double destinationLng) async {
+    final url = getDirectionsUrl(destinationLat, destinationLng);
+    final uri = Uri.parse(url);
+    
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      throw 'Could not open navigation';
+    }
+  }
+
+  /// Open Google Maps with multiple mosque locations
+  Future<void> openMultipleMosquesInMap(
+    List<Mosque> mosques,
+    double userLat,
+    double userLng,
+  ) async {
+    if (mosques.isEmpty) return;
+    
+    // Use the user's location as center and search for mosques nearby
+    // This will open Google Maps showing mosques in the area
+    final url = 'https://www.google.com/maps/search/mosque/@$userLat,$userLng,15z';
+    
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      throw 'Could not open map';
+    }
+  }
+
+  /// Get distance to a mosque from current location
+  Future<double> getDistanceToMosque(Mosque mosque) async {
+    try {
+      final position = await getCurrentPosition();
+      return calculateDistance(
+        position.latitude,
+        position.longitude,
+        mosque.latitude,
+        mosque.longitude,
+      );
+    } catch (e) {
+      throw 'Failed to calculate distance: $e';
+    }
+  }
+
+  /// Get formatted distance to a mosque from current location
+  Future<String> getFormattedDistanceToMosque(Mosque mosque) async {
+    try {
+      final position = await getCurrentPosition();
+      return getFormattedDistance(
+        position.latitude,
+        position.longitude,
+        mosque.latitude,
+        mosque.longitude,
+      );
+    } catch (e) {
+      throw 'Failed to calculate distance: $e';
+    }
   }
 }
 

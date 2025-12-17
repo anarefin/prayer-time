@@ -8,14 +8,22 @@ service cloud.firestore {
     }
     
     // Helper function to check if user is admin
+    // Safe version that doesn't fail for unauthenticated users
     function isAdmin() {
       return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
     // Helper function to check if user is accessing their own data
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Districts collection - public read, admin write
+    match /districts/{districtId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
     
     // Areas collection - public read, admin write

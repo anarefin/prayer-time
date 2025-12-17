@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/prayer_time.dart';
 
 /// Reusable card widget for displaying individual prayer time
 class PrayerTimeCard extends StatelessWidget {
@@ -103,6 +102,8 @@ class PrayerTimeCard extends StatelessWidget {
         return Icons.wb_twilight;
       case 'dhuhr':
         return Icons.wb_sunny;
+      case 'jummah':
+        return Icons.mosque;
       case 'asr':
         return Icons.light_mode;
       case 'maghrib':

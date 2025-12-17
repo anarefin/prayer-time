@@ -5,6 +5,16 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import '../models/prayer_time.dart';
 import '../utils/constants.dart';
 
+/// Notification settings constants
+class NotificationSettings {
+  NotificationSettings._();
+  
+  static const int minutesBeforePrayer = 15;
+  static const String channelId = 'prayer_time_channel';
+  static const String channelName = 'Prayer Time Notifications';
+  static const String channelDescription = 'Notifications for prayer times';
+}
+
 /// Service for handling local and push notifications
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();

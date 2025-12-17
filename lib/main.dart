@@ -4,11 +4,12 @@ import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
+import 'providers/district_provider.dart';
 import 'providers/mosque_provider.dart';
 import 'providers/prayer_time_provider.dart';
 import 'providers/favorites_provider.dart';
 import 'services/notification_service.dart';
-import 'screens/public/home_screen.dart';
+import 'screens/public/home_screen_new.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'utils/theme.dart';
 
@@ -24,6 +25,10 @@ void main() async {
   // Initialize notification service
   await NotificationService().initialize();
   
+  // Note: Districts are seeded via Node.js script (seed-bangladesh-data.js)
+  // Auto-seeding disabled to avoid permission issues
+  // To seed districts, run: node seed-bangladesh-data.js
+  
   runApp(const PrayerTimeApp());
 }
 
@@ -37,6 +42,10 @@ class PrayerTimeApp extends StatelessWidget {
         // Auth Provider
         ChangeNotifierProvider(
           create: (_) => AuthProvider()..initializeAuthListener(),
+        ),
+        // District Provider
+        ChangeNotifierProvider(
+          create: (_) => DistrictProvider(),
         ),
         // Mosque Provider
         ChangeNotifierProvider(
@@ -69,6 +78,6 @@ class PrayerTimeApp extends StatelessWidget {
     if (authProvider.isLoggedIn && authProvider.isAdmin) {
       return const AdminDashboardScreen();
     }
-    return const HomeScreen();
+    return const HomeScreenNew();
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/mosque.dart';
-import '../../models/area.dart';
 import '../../providers/mosque_provider.dart';
 import '../../widgets/loading_indicator.dart';
 
@@ -19,10 +18,20 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _addressController;
+  late final TextEditingController _descriptionController;
   late final TextEditingController _latitudeController;
   late final TextEditingController _longitudeController;
   String? _selectedAreaId;
   bool _isLoading = false;
+  
+  // Facility flags
+  bool _hasWomenPrayer = false;
+  bool _hasCarParking = false;
+  bool _hasBikeParking = false;
+  bool _hasCycleParking = false;
+  bool _hasWudu = true;
+  bool _hasAC = false;
+  bool _isWheelchairAccessible = false;
 
   @override
   void initState() {
@@ -30,6 +39,8 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
     _nameController = TextEditingController(text: widget.mosque?.name ?? '');
     _addressController =
         TextEditingController(text: widget.mosque?.address ?? '');
+    _descriptionController =
+        TextEditingController(text: widget.mosque?.description ?? '');
     _latitudeController = TextEditingController(
       text: widget.mosque?.latitude.toString() ?? '',
     );
@@ -37,6 +48,17 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
       text: widget.mosque?.longitude.toString() ?? '',
     );
     _selectedAreaId = widget.mosque?.areaId;
+    
+    // Initialize facility flags from mosque
+    if (widget.mosque != null) {
+      _hasWomenPrayer = widget.mosque!.hasWomenPrayer;
+      _hasCarParking = widget.mosque!.hasCarParking;
+      _hasBikeParking = widget.mosque!.hasBikeParking;
+      _hasCycleParking = widget.mosque!.hasCycleParking;
+      _hasWudu = widget.mosque!.hasWudu;
+      _hasAC = widget.mosque!.hasAC;
+      _isWheelchairAccessible = widget.mosque!.isWheelchairAccessible;
+    }
 
     // Load areas
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -48,6 +70,7 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
   void dispose() {
     _nameController.dispose();
     _addressController.dispose();
+    _descriptionController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
     super.dispose();
@@ -104,6 +127,16 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  // Description
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Description (Optional)',
+                      prefixIcon: Icon(Icons.description),
+                    ),
+                    maxLines: 3,
                   ),
                   const SizedBox(height: 16),
                   // Area dropdown
@@ -199,6 +232,97 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
                     },
                   ),
                   const SizedBox(height: 24),
+                  // Facilities section
+                  Text(
+                    'Facilities',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Select available facilities at this mosque',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 16),
+                  CheckboxListTile(
+                    title: const Text('Women Prayer Place'),
+                    subtitle: const Text('Separate prayer area for women'),
+                    secondary: const Icon(Icons.woman, color: Colors.purple),
+                    value: _hasWomenPrayer,
+                    onChanged: (value) {
+                      setState(() {
+                        _hasWomenPrayer = value ?? false;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Car Parking'),
+                    subtitle: const Text('Parking available for cars'),
+                    secondary: const Icon(Icons.local_parking, color: Colors.blue),
+                    value: _hasCarParking,
+                    onChanged: (value) {
+                      setState(() {
+                        _hasCarParking = value ?? false;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Motorbike Parking'),
+                    subtitle: const Text('Parking available for motorbikes'),
+                    secondary: const Icon(Icons.two_wheeler, color: Colors.orange),
+                    value: _hasBikeParking,
+                    onChanged: (value) {
+                      setState(() {
+                        _hasBikeParking = value ?? false;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Cycle Parking'),
+                    subtitle: const Text('Parking available for bicycles'),
+                    secondary: const Icon(Icons.pedal_bike, color: Colors.green),
+                    value: _hasCycleParking,
+                    onChanged: (value) {
+                      setState(() {
+                        _hasCycleParking = value ?? false;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Wudu Facilities'),
+                    subtitle: const Text('Ablution facilities available'),
+                    secondary: const Icon(Icons.water_drop, color: Colors.lightBlue),
+                    value: _hasWudu,
+                    onChanged: (value) {
+                      setState(() {
+                        _hasWudu = value ?? true;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Air Conditioning'),
+                    subtitle: const Text('AC available in prayer hall'),
+                    secondary: const Icon(Icons.ac_unit, color: Colors.cyan),
+                    value: _hasAC,
+                    onChanged: (value) {
+                      setState(() {
+                        _hasAC = value ?? false;
+                      });
+                    },
+                  ),
+                  CheckboxListTile(
+                    title: const Text('Wheelchair Accessible'),
+                    subtitle: const Text('Accessible for wheelchair users'),
+                    secondary: const Icon(Icons.accessible, color: Colors.teal),
+                    value: _isWheelchairAccessible,
+                    onChanged: (value) {
+                      setState(() {
+                        _isWheelchairAccessible = value ?? false;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
                   // Help text
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -260,6 +384,16 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
       areaId: _selectedAreaId!,
       latitude: double.parse(_latitudeController.text),
       longitude: double.parse(_longitudeController.text),
+      hasWomenPrayer: _hasWomenPrayer,
+      hasCarParking: _hasCarParking,
+      hasBikeParking: _hasBikeParking,
+      hasCycleParking: _hasCycleParking,
+      hasWudu: _hasWudu,
+      hasAC: _hasAC,
+      isWheelchairAccessible: _isWheelchairAccessible,
+      description: _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim(),
     );
 
     final bool success;

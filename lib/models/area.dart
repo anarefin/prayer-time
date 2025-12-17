@@ -1,12 +1,14 @@
-/// Model representing a geographical area/location
+/// Model representing a geographical area/location within a district
 class Area {
   final String id;
   final String name;
+  final String districtId; // Reference to parent district
   final int order; // For sorting areas in display order
 
   Area({
     required this.id,
     required this.name,
+    required this.districtId,
     required this.order,
   });
 
@@ -15,6 +17,7 @@ class Area {
     return Area(
       id: id,
       name: json['name'] as String? ?? '',
+      districtId: json['districtId'] as String? ?? '',
       order: json['order'] as int? ?? 0,
     );
   }
@@ -23,6 +26,7 @@ class Area {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
+      'districtId': districtId,
       'order': order,
     };
   }
@@ -31,17 +35,20 @@ class Area {
   Area copyWith({
     String? id,
     String? name,
+    String? districtId,
     int? order,
   }) {
     return Area(
       id: id ?? this.id,
       name: name ?? this.name,
+      districtId: districtId ?? this.districtId,
       order: order ?? this.order,
     );
   }
 
   @override
-  String toString() => 'Area(id: $id, name: $name, order: $order)';
+  String toString() =>
+      'Area(id: $id, name: $name, districtId: $districtId, order: $order)';
 
   @override
   bool operator ==(Object other) {

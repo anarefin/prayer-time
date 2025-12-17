@@ -7,6 +7,7 @@ import '../../providers/favorites_provider.dart';
 import '../../widgets/mosque_card.dart';
 import '../../widgets/loading_indicator.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/facility_icon.dart';
 import 'prayer_time_screen.dart';
 
 /// Screen displaying list of mosques in an area
@@ -48,6 +49,13 @@ class _MosqueListScreenState extends State<MosqueListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.area.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            tooltip: 'Filter by facilities',
+            onPressed: () => _showFacilityFiltersDialog(context),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -73,6 +81,50 @@ class _MosqueListScreenState extends State<MosqueListScreen> {
                 context.read<MosqueProvider>().searchMosques(query);
               },
             ),
+          ),
+          // Active filters display
+          Consumer<MosqueProvider>(
+            builder: (context, provider, _) {
+              if (!provider.hasActiveFacilityFilters) {
+                return const SizedBox.shrink();
+              }
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    const Text('Filters:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: provider.facilityFilters.entries
+                              .where((e) => e.value)
+                              .map((e) => Padding(
+                                    padding: const EdgeInsets.only(right: 4),
+                                    child: Chip(
+                                      label: Text(
+                                        FacilityIconData.getLabel(e.key),
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                      onDeleted: () => provider.toggleFacilityFilter(e.key),
+                                      deleteIconColor: Colors.white,
+                                      backgroundColor: FacilityIconData.getColor(e.key),
+                                      labelStyle: const TextStyle(color: Colors.white),
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => provider.clearFacilityFilters(),
+                      child: const Text('Clear All'),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           // Mosque list
           Expanded(
@@ -146,6 +198,56 @@ class _MosqueListScreenState extends State<MosqueListScreen> {
                 );
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFacilityFiltersDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Filter by Facilities'),
+        content: Consumer<MosqueProvider>(
+          builder: (context, provider, _) {
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: provider.facilityFilters.keys.map((facilityKey) {
+                  final isActive = provider.facilityFilters[facilityKey] ?? false;
+                  return CheckboxListTile(
+                    title: Row(
+                      children: [
+                        Icon(
+                          FacilityIconData.getIcon(facilityKey),
+                          size: 20,
+                          color: FacilityIconData.getColor(facilityKey),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(FacilityIconData.getLabel(facilityKey)),
+                      ],
+                    ),
+                    value: isActive,
+                    onChanged: (value) {
+                      provider.toggleFacilityFilter(facilityKey);
+                    },
+                  );
+                }).toList(),
+              ),
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              context.read<MosqueProvider>().clearFacilityFilters();
+            },
+            child: const Text('Clear All'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
           ),
         ],
       ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/district_provider.dart';
 import '../../providers/mosque_provider.dart';
+import 'manage_districts_screen.dart';
 import 'manage_areas_screen.dart';
 import 'manage_mosques_screen.dart';
 import 'manage_prayer_times_screen.dart';
@@ -20,6 +22,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     super.initState();
     // Load data for statistics
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DistrictProvider>().loadDistricts();
       context.read<MosqueProvider>().loadAreas();
       context.read<MosqueProvider>().loadAllMosques();
     });
@@ -99,28 +102,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
             ),
             const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Consumer<DistrictProvider>(
+                    builder: (context, provider, _) => _StatCard(
+                      icon: Icons.map,
+                      title: 'Districts',
+                      count: provider.districts.length,
+                      color: Colors.purple,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Consumer<MosqueProvider>(
+                    builder: (context, provider, _) => _StatCard(
+                      icon: Icons.location_city,
+                      title: 'Areas',
+                      count: provider.areas.length,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             Consumer<MosqueProvider>(
               builder: (context, provider, child) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: _StatCard(
-                        icon: Icons.location_city,
-                        title: 'Areas',
-                        count: provider.areas.length,
-                        color: Colors.blue,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _StatCard(
-                        icon: Icons.mosque,
-                        title: 'Mosques',
-                        count: provider.mosques.length,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ],
+                return _StatCard(
+                  icon: Icons.mosque,
+                  title: 'Mosques',
+                  count: provider.mosques.length,
+                  color: Colors.green,
                 );
               },
             ),
@@ -133,6 +147,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
             ),
             const SizedBox(height: 16),
+            _ManagementCard(
+              icon: Icons.map,
+              title: 'Manage Districts',
+              description: 'Add, edit, or delete Bangladesh districts',
+              color: Colors.purple,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ManageDistrictsScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
             _ManagementCard(
               icon: Icons.location_city,
               title: 'Manage Areas',

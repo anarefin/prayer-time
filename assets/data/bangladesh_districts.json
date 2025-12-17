@@ -1,0 +1,109 @@
+{
+  "divisions": [
+    {
+      "name": "Dhaka",
+      "districts": [
+        {"name": "Dhaka", "order": 1},
+        {"name": "Faridpur", "order": 2},
+        {"name": "Gazipur", "order": 3},
+        {"name": "Gopalganj", "order": 4},
+        {"name": "Kishoreganj", "order": 5},
+        {"name": "Madaripur", "order": 6},
+        {"name": "Manikganj", "order": 7},
+        {"name": "Munshiganj", "order": 8},
+        {"name": "Narayanganj", "order": 9},
+        {"name": "Narsingdi", "order": 10},
+        {"name": "Rajbari", "order": 11},
+        {"name": "Shariatpur", "order": 12},
+        {"name": "Tangail", "order": 13}
+      ]
+    },
+    {
+      "name": "Chittagong",
+      "districts": [
+        {"name": "Bandarban", "order": 14},
+        {"name": "Brahmanbaria", "order": 15},
+        {"name": "Chandpur", "order": 16},
+        {"name": "Chittagong", "order": 17},
+        {"name": "Cumilla", "order": 18},
+        {"name": "Cox's Bazar", "order": 19},
+        {"name": "Feni", "order": 20},
+        {"name": "Khagrachari", "order": 21},
+        {"name": "Lakshmipur", "order": 22},
+        {"name": "Noakhali", "order": 23},
+        {"name": "Rangamati", "order": 24}
+      ]
+    },
+    {
+      "name": "Rajshahi",
+      "districts": [
+        {"name": "Bogura", "order": 25},
+        {"name": "Joypurhat", "order": 26},
+        {"name": "Naogaon", "order": 27},
+        {"name": "Natore", "order": 28},
+        {"name": "Chapainawabganj", "order": 29},
+        {"name": "Pabna", "order": 30},
+        {"name": "Rajshahi", "order": 31},
+        {"name": "Sirajganj", "order": 32}
+      ]
+    },
+    {
+      "name": "Khulna",
+      "districts": [
+        {"name": "Bagerhat", "order": 33},
+        {"name": "Chuadanga", "order": 34},
+        {"name": "Jessore", "order": 35},
+        {"name": "Jhenaidah", "order": 36},
+        {"name": "Khulna", "order": 37},
+        {"name": "Kushtia", "order": 38},
+        {"name": "Magura", "order": 39},
+        {"name": "Meherpur", "order": 40},
+        {"name": "Narail", "order": 41},
+        {"name": "Satkhira", "order": 42}
+      ]
+    },
+    {
+      "name": "Barishal",
+      "districts": [
+        {"name": "Barguna", "order": 43},
+        {"name": "Barishal", "order": 44},
+        {"name": "Bhola", "order": 45},
+        {"name": "Jhalokathi", "order": 46},
+        {"name": "Patuakhali", "order": 47},
+        {"name": "Pirojpur", "order": 48}
+      ]
+    },
+    {
+      "name": "Sylhet",
+      "districts": [
+        {"name": "Habiganj", "order": 49},
+        {"name": "Moulvibazar", "order": 50},
+        {"name": "Sunamganj", "order": 51},
+        {"name": "Sylhet", "order": 52}
+      ]
+    },
+    {
+      "name": "Rangpur",
+      "districts": [
+        {"name": "Dinajpur", "order": 53},
+        {"name": "Gaibandha", "order": 54},
+        {"name": "Kurigram", "order": 55},
+        {"name": "Lalmonirhat", "order": 56},
+        {"name": "Nilphamari", "order": 57},
+        {"name": "Panchagarh", "order": 58},
+        {"name": "Rangpur", "order": 59},
+        {"name": "Thakurgaon", "order": 60}
+      ]
+    },
+    {
+      "name": "Mymensingh",
+      "districts": [
+        {"name": "Jamalpur", "order": 61},
+        {"name": "Mymensingh", "order": 62},
+        {"name": "Netrokona", "order": 63},
+        {"name": "Sherpur", "order": 64}
+      ]
+    }
+  ]
+}
+

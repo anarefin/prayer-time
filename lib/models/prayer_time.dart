@@ -10,6 +10,7 @@ class PrayerTime {
   final DateTime asr;
   final DateTime maghrib;
   final DateTime isha;
+  final DateTime? jummah; // Jummah prayer time (for Fridays)
 
   PrayerTime({
     required this.id,
@@ -20,6 +21,7 @@ class PrayerTime {
     required this.asr,
     required this.maghrib,
     required this.isha,
+    this.jummah,
   });
 
   /// Create PrayerTime from Firestore document
@@ -36,13 +38,16 @@ class PrayerTime {
       asr: _parseTime(json['asr'] as String, date),
       maghrib: _parseTime(json['maghrib'] as String, date),
       isha: _parseTime(json['isha'] as String, date),
+      jummah: json['jummah'] != null
+          ? _parseTime(json['jummah'] as String, date)
+          : null,
     );
   }
 
   /// Convert PrayerTime to Firestore document
   Map<String, dynamic> toJson() {
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
-    return {
+    final json = {
       'mosqueId': mosqueId,
       'date': dateStr,
       'fajr': DateFormat('HH:mm').format(fajr),
@@ -51,6 +56,10 @@ class PrayerTime {
       'maghrib': DateFormat('HH:mm').format(maghrib),
       'isha': DateFormat('HH:mm').format(isha),
     };
+    if (jummah != null) {
+      json['jummah'] = DateFormat('HH:mm').format(jummah!);
+    }
+    return json;
   }
 
   /// Parse time string (HH:mm) and combine with date
@@ -91,6 +100,8 @@ class PrayerTime {
         return fajr;
       case 'dhuhr':
         return dhuhr;
+      case 'jummah':
+        return jummah;
       case 'asr':
         return asr;
       case 'maghrib':
@@ -109,13 +120,40 @@ class PrayerTime {
 
   /// Get all prayer times as a map
   Map<String, DateTime> getAllPrayers() {
-    return {
+    final prayers = {
       'Fajr': fajr,
       'Dhuhr': dhuhr,
       'Asr': asr,
       'Maghrib': maghrib,
       'Isha': isha,
     };
+    
+    // Add Jummah if it's Friday and jummah time is set
+    if (isFriday() && jummah != null) {
+      prayers['Jummah'] = jummah!;
+    }
+    
+    return prayers;
+  }
+
+  /// Check if the date is a Friday
+  bool isFriday() {
+    return date.weekday == DateTime.friday;
+  }
+
+  /// Get prayer times for display (includes Jummah on Fridays)
+  Map<String, DateTime> getPrayersForDisplay() {
+    if (isFriday() && jummah != null) {
+      return {
+        'Fajr': fajr,
+        'Dhuhr': dhuhr,
+        'Jummah': jummah!,
+        'Asr': asr,
+        'Maghrib': maghrib,
+        'Isha': isha,
+      };
+    }
+    return getAllPrayers();
   }
 
   @override
