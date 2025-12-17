@@ -22,6 +22,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     _loadFavorites();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload favorites when user data changes (e.g., when favorites are updated in Firestore)
+    _loadFavorites();
+  }
+
   void _loadFavorites() {
     final authProvider = context.read<AuthProvider>();
     if (authProvider.isLoggedIn && authProvider.currentUser != null) {
@@ -34,6 +41,22 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+
+    // Reload favorites when user data changes (important for real-time updates)
+    if (authProvider.isLoggedIn && authProvider.currentUser != null) {
+      // Check if favorites need to be synced
+      final favProvider = context.read<FavoritesProvider>();
+      final currentFavorites = authProvider.currentUser!.favorites;
+      
+      // Only reload if the favorites list has changed
+      if (!_listsEqual(favProvider.favoriteIds, currentFavorites)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            favProvider.loadFavorites(currentFavorites);
+          }
+        });
+      }
+    }
 
     // Show login prompt if not logged in
     if (!authProvider.isLoggedIn) {
@@ -143,6 +166,18 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       context: context,
       builder: (context) => const AuthDialog(),
     );
+  }
+
+  /// Helper method to compare two lists
+  bool _listsEqual(List<String> list1, List<String> list2) {
+    if (list1.length != list2.length) return false;
+    for (int i = 0; i < list1.length; i++) {
+      if (!list2.contains(list1[i])) return false;
+    }
+    for (int i = 0; i < list2.length; i++) {
+      if (!list1.contains(list2[i])) return false;
+    }
+    return true;
   }
 }
 

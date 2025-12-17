@@ -208,13 +208,32 @@ class LocationService {
 
   /// Open Google Maps navigation to a mosque
   Future<void> openNavigation(double destinationLat, double destinationLng) async {
-    final url = getDirectionsUrl(destinationLat, destinationLng);
-    final uri = Uri.parse(url);
+    // Try native Google Maps app first (better UX)
+    final nativeUrl = 'comgooglemaps://?daddr=$destinationLat,$destinationLng&directionsmode=driving';
+    final nativeUri = Uri.parse(nativeUrl);
     
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (await canLaunchUrl(nativeUri)) {
+      await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
+      return;
+    }
+    
+    // Fallback to Apple Maps on iOS or generic geo intent on Android
+    final geoUrl = 'geo:$destinationLat,$destinationLng?q=$destinationLat,$destinationLng';
+    final geoUri = Uri.parse(geoUrl);
+    
+    if (await canLaunchUrl(geoUri)) {
+      await launchUrl(geoUri, mode: LaunchMode.externalApplication);
+      return;
+    }
+    
+    // Final fallback to web-based Google Maps
+    final webUrl = getDirectionsUrl(destinationLat, destinationLng);
+    final webUri = Uri.parse(webUrl);
+    
+    if (await canLaunchUrl(webUri)) {
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
     } else {
-      throw 'Could not open navigation';
+      throw 'Could not open navigation. Please ensure you have Google Maps or a maps app installed.';
     }
   }
 
@@ -226,15 +245,32 @@ class LocationService {
   ) async {
     if (mosques.isEmpty) return;
     
-    // Use the user's location as center and search for mosques nearby
-    // This will open Google Maps showing mosques in the area
-    final url = 'https://www.google.com/maps/search/mosque/@$userLat,$userLng,15z';
+    // Try native Google Maps app first
+    final nativeUrl = 'comgooglemaps://?center=$userLat,$userLng&q=mosque&zoom=15';
+    final nativeUri = Uri.parse(nativeUrl);
     
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (await canLaunchUrl(nativeUri)) {
+      await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
+      return;
+    }
+    
+    // Fallback to geo search
+    final geoUrl = 'geo:$userLat,$userLng?q=mosque&z=15';
+    final geoUri = Uri.parse(geoUrl);
+    
+    if (await canLaunchUrl(geoUri)) {
+      await launchUrl(geoUri, mode: LaunchMode.externalApplication);
+      return;
+    }
+    
+    // Final fallback to web-based Google Maps
+    final webUrl = 'https://www.google.com/maps/search/mosque/@$userLat,$userLng,15z';
+    final webUri = Uri.parse(webUrl);
+    
+    if (await canLaunchUrl(webUri)) {
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
     } else {
-      throw 'Could not open map';
+      throw 'Could not open map. Please ensure you have Google Maps or a maps app installed.';
     }
   }
 

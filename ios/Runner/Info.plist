@@ -55,5 +55,12 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>maps</string>
+		<string>http</string>
+		<string>https</string>
+	</array>
 </dict>
 </plist>

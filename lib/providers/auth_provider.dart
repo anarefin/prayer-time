@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
@@ -10,6 +11,7 @@ class AuthProvider with ChangeNotifier {
   UserModel? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
+  StreamSubscription<UserModel?>? _userDataSubscription;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -37,10 +39,15 @@ class AuthProvider with ChangeNotifier {
           } else {
             print('✅ User data loaded successfully: $_currentUser');
           }
+          
+          // Set up real-time user data listener to sync favorites and other data
+          _setupUserDataListener(firebaseUser.uid);
+          
           notifyListeners();
         } else {
           // User is logged out
           print('🔔 Auth state changed: User logged out');
+          _cancelUserDataListener();
           _currentUser = null;
           notifyListeners();
         }
@@ -57,6 +64,32 @@ class AuthProvider with ChangeNotifier {
       _currentUser = null;
       notifyListeners();
     });
+  }
+
+  /// Set up real-time listener for user data changes in Firestore
+  void _setupUserDataListener(String uid) {
+    // Cancel any existing listener
+    _cancelUserDataListener();
+    
+    // Listen to user data changes
+    _userDataSubscription = _authService.getUserDataStream(uid).listen(
+      (UserModel? userData) {
+        if (userData != null) {
+          print('🔄 User data updated from Firestore: ${userData.favorites.length} favorites');
+          _currentUser = userData;
+          notifyListeners();
+        }
+      },
+      onError: (error) {
+        print('❌ Error in user data stream: $error');
+      },
+    );
+  }
+
+  /// Cancel user data listener
+  void _cancelUserDataListener() {
+    _userDataSubscription?.cancel();
+    _userDataSubscription = null;
   }
 
   /// Get user data stream
@@ -123,6 +156,7 @@ class AuthProvider with ChangeNotifier {
 
     try {
       await _authService.signOut();
+      _cancelUserDataListener();
       _currentUser = null;
       _isLoading = false;
       notifyListeners();
@@ -177,6 +211,12 @@ class AuthProvider with ChangeNotifier {
       }
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _cancelUserDataListener();
+    super.dispose();
   }
 }
 
