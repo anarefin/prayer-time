@@ -188,5 +188,78 @@ class DistrictProvider with ChangeNotifier {
     _areasByDistrict = [];
     notifyListeners();
   }
+
+  /// Get district by ID (from loaded list or fetch from Firestore)
+  Future<District?> getDistrictByIdAsync(String districtId) async {
+    // First try to find in loaded districts
+    try {
+      return _districts.firstWhere((d) => d.id == districtId);
+    } catch (e) {
+      // If not found, fetch from Firestore
+      try {
+        return await _firestoreService.getDistrictById(districtId);
+      } catch (e) {
+        _errorMessage = 'Failed to get district: $e';
+        notifyListeners();
+        return null;
+      }
+    }
+  }
+
+  /// Auto-select location based on an area ID
+  /// This will fetch the area, its district, and automatically populate all selections
+  Future<bool> autoSelectLocationFromArea(String areaId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Fetch the area
+      final area = await _firestoreService.getAreaById(areaId);
+      if (area == null) {
+        _errorMessage = 'Area not found';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // Fetch the district
+      final district = await _firestoreService.getDistrictById(area.districtId);
+      if (district == null) {
+        _errorMessage = 'District not found';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // Load areas for this district if not already loaded
+      if (_selectedDistrictId != district.id) {
+        await loadAreasByDistrict(district.id);
+      }
+
+      // Set selections
+      _selectedDistrictId = district.id;
+      _selectedAreaId = area.id;
+      
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Failed to auto-select location: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Get division name from district ID
+  String? getDivisionNameFromDistrict(String districtId) {
+    try {
+      final district = _districts.firstWhere((d) => d.id == districtId);
+      return district.divisionName;
+    } catch (e) {
+      return null;
+    }
+  }
 }
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/area.dart';
 import '../../providers/mosque_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../widgets/mosque_card.dart';
 import '../../widgets/loading_indicator.dart';
@@ -43,9 +42,6 @@ class _MosqueListScreenState extends State<MosqueListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-    final isLoggedIn = authProvider.isLoggedIn;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.area.name),
@@ -170,17 +166,9 @@ class _MosqueListScreenState extends State<MosqueListScreen> {
                         return MosqueCard(
                           mosque: mosque,
                           isFavorite: isFavorite,
-                          showFavoriteButton: isLoggedIn,
-                          onFavoriteToggle: isLoggedIn
-                              ? () async {
-                                  if (authProvider.currentUser != null) {
-                                    await favProvider.toggleFavorite(
-                                      authProvider.currentUser!.uid,
-                                      mosque.id,
-                                    );
-                                  }
-                                }
-                              : null,
+                          onFavoriteToggle: () async {
+                            await favProvider.toggleFavorite(mosque.id);
+                          },
                           onTap: () {
                             Navigator.push(
                               context,

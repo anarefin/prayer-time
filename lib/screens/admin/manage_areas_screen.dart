@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/area.dart';
 import '../../providers/mosque_provider.dart';
+import '../../providers/district_provider.dart';
 import '../../widgets/area_tile.dart';
 import '../../widgets/loading_indicator.dart';
 import '../../widgets/empty_state.dart';
@@ -148,6 +149,7 @@ class _AddEditAreaDialogState extends State<_AddEditAreaDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _orderController;
+  String? _selectedDistrictId;
   bool _isLoading = false;
 
   @override
@@ -157,6 +159,12 @@ class _AddEditAreaDialogState extends State<_AddEditAreaDialog> {
     _orderController = TextEditingController(
       text: widget.area?.order.toString() ?? '0',
     );
+    _selectedDistrictId = widget.area?.districtId;
+    
+    // Load districts if not already loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DistrictProvider>().loadDistricts();
+    });
   }
 
   @override
@@ -170,60 +178,92 @@ class _AddEditAreaDialogState extends State<_AddEditAreaDialog> {
   Widget build(BuildContext context) {
     final isEdit = widget.area != null;
 
-    return AlertDialog(
-      title: Text(isEdit ? 'Edit Area' : 'Add Area'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Area Name',
-                prefixIcon: Icon(Icons.location_city),
+    return Consumer<DistrictProvider>(
+      builder: (context, districtProvider, child) {
+        return AlertDialog(
+          title: Text(isEdit ? 'Edit Area' : 'Add Area'),
+          content: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // District dropdown
+                  DropdownButtonFormField<String>(
+                    value: _selectedDistrictId,
+                    decoration: const InputDecoration(
+                      labelText: 'District',
+                      prefixIcon: Icon(Icons.map),
+                    ),
+                    items: districtProvider.districts.map((district) {
+                      return DropdownMenuItem(
+                        value: district.id,
+                        child: Text(district.name),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedDistrictId = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select a district';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Area Name',
+                      prefixIcon: Icon(Icons.location_city),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter area name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _orderController,
+                    decoration: const InputDecoration(
+                      labelText: 'Display Order',
+                      prefixIcon: Icon(Icons.sort),
+                      helperText: 'Lower numbers appear first',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter display order';
+                      }
+                      if (int.tryParse(value) == null) {
+                        return 'Please enter a valid number';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter area name';
-                }
-                return null;
-              },
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _orderController,
-              decoration: const InputDecoration(
-                labelText: 'Display Order',
-                prefixIcon: Icon(Icons.sort),
-                helperText: 'Lower numbers appear first',
-              ),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter display order';
-                }
-                if (int.tryParse(value) == null) {
-                  return 'Please enter a valid number';
-                }
-                return null;
-              },
+          ),
+          actions: [
+            TextButton(
+              onPressed: _isLoading ? null : () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _submit,
+              child: _isLoading
+                  ? const SmallLoadingIndicator()
+                  : Text(isEdit ? 'Update' : 'Add'),
             ),
           ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _submit,
-          child: _isLoading
-              ? const SmallLoadingIndicator()
-              : Text(isEdit ? 'Update' : 'Add'),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -238,7 +278,7 @@ class _AddEditAreaDialogState extends State<_AddEditAreaDialog> {
     final area = Area(
       id: widget.area?.id ?? '',
       name: _nameController.text.trim(),
-      districtId: widget.area?.districtId ?? '',
+      districtId: _selectedDistrictId ?? '',
       order: int.parse(_orderController.text),
     );
 

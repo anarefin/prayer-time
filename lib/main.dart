@@ -57,7 +57,7 @@ class PrayerTimeApp extends StatelessWidget {
         ),
         // Favorites Provider
         ChangeNotifierProvider(
-          create: (_) => FavoritesProvider(),
+          create: (_) => FavoritesProvider()..initializeFavorites(),
         ),
       ],
       child: Consumer<AuthProvider>(

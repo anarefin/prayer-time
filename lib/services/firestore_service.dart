@@ -55,6 +55,11 @@ class FirestoreService {
     return null;
   }
 
+  /// Get a single district by ID (alias for consistency)
+  Future<District?> getDistrictById(String districtId) async {
+    return getDistrict(districtId);
+  }
+
   /// Add a new district
   Future<String> addDistrict(District district) async {
     final docRef =
@@ -134,6 +139,15 @@ class FirestoreService {
           .map((doc) => Area.fromJson(doc.data(), doc.id))
           .toList();
     });
+  }
+
+  /// Get a single area by ID
+  Future<Area?> getAreaById(String areaId) async {
+    final doc = await _firestore.collection('areas').doc(areaId).get();
+    if (doc.exists) {
+      return Area.fromJson(doc.data()!, doc.id);
+    }
+    return null;
   }
 
   /// Add a new area

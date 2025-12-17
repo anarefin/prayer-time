@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../../models/district.dart';
 import '../../models/area.dart';
 import '../../providers/district_provider.dart';
-import '../../providers/mosque_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/favorites_provider.dart';
+import '../../services/location_service.dart';
 import 'mosque_list_screen.dart';
 import 'favorites_screen.dart';
 import 'nearest_mosque_screen.dart';
@@ -108,13 +110,118 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
   String? _selectedDivision;
   District? _selectedDistrict;
   Area? _selectedArea;
+  final LocationService _locationService = LocationService();
+  bool _hasAttemptedAutoLocation = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DistrictProvider>().loadDistricts();
+      _initializeLocation();
     });
+  }
+
+  /// Initialize location and auto-select area based on user's current position
+  Future<void> _initializeLocation() async {
+    if (!mounted) return;
+
+    final districtProvider = context.read<DistrictProvider>();
+    
+    // First, load districts
+    await districtProvider.loadDistricts();
+    
+    // Only attempt auto-location once
+    if (_hasAttemptedAutoLocation) return;
+    _hasAttemptedAutoLocation = true;
+
+    // Try to auto-select based on location
+    await _attemptAutoLocation();
+  }
+
+  /// Attempt to auto-select location based on GPS
+  Future<void> _attemptAutoLocation() async {
+    if (!mounted) return;
+
+    try {
+      // Find nearest mosque within 50km radius
+      final nearestMosque = await _locationService.findNearestMosque();
+      
+      if (nearestMosque == null) {
+        // No nearby mosque found
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No nearby mosques found. Please select your area manually.'),
+              duration: Duration(seconds: 4),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Get the area ID from the mosque
+      final areaId = nearestMosque.areaId;
+      
+      if (!mounted) return;
+      final districtProvider = context.read<DistrictProvider>();
+      
+      // Auto-select location based on area
+      final success = await districtProvider.autoSelectLocationFromArea(areaId);
+      
+      if (success && mounted) {
+        // Get the selected area and district for display
+        final area = districtProvider.getSelectedArea();
+        final district = districtProvider.getSelectedDistrict();
+        
+        if (area != null && district != null) {
+          setState(() {
+            _selectedDivision = district.divisionName;
+            _selectedDistrict = district;
+            _selectedArea = area;
+          });
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Auto-selected ${area.name} based on your location. You can change it anytime.',
+                ),
+                duration: const Duration(seconds: 4),
+                backgroundColor: Colors.green,
+                action: SnackBarAction(
+                  label: 'OK',
+                  textColor: Colors.white,
+                  onPressed: () {},
+                ),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      // Handle various location errors
+      if (!mounted) return;
+      
+      String message;
+      if (e.toString().contains('permission denied')) {
+        message = 'Location permission denied. Please select your area manually.';
+      } else if (e.toString().contains('Location services are disabled')) {
+        message = 'Location services are disabled. Please enable them or select your area manually.';
+      } else if (e.toString().contains('permanently denied')) {
+        message = 'Location permission permanently denied. Please enable it in settings or select your area manually.';
+      } else {
+        message = 'Unable to get your location. Please select your area manually.';
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 5),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   @override
@@ -135,6 +242,144 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Welcome Banner (only shown when logged in)
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, _) {
+                if (!authProvider.isLoggedIn || authProvider.currentUser == null) {
+                  return const SizedBox.shrink();
+                }
+
+                final user = authProvider.currentUser!;
+                final email = user.email;
+                final firstName = email.split('@').first;
+
+                return Consumer<FavoritesProvider>(
+                  builder: (context, favProvider, _) {
+                    return Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.teal.shade400,
+                              Colors.teal.shade600,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            // User Avatar
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.3),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Welcome Text
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Welcome back!',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    firstName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.favorite,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${favProvider.favoriteCount} favorites',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.9),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Sign Out Button
+                            IconButton(
+                              onPressed: () async {
+                                final shouldSignOut = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Sign Out'),
+                                    content: const Text('Are you sure you want to sign out?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () => Navigator.pop(context, true),
+                                        child: const Text('Sign Out'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (shouldSignOut == true && context.mounted) {
+                                  await authProvider.signOut();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Signed out successfully')),
+                                    );
+                                  }
+                                }
+                              },
+                              icon: const Icon(Icons.logout, color: Colors.white),
+                              tooltip: 'Sign Out',
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, _) {
+                if (authProvider.isLoggedIn) {
+                  return const SizedBox(height: 16);
+                }
+                return const SizedBox.shrink();
+              },
+            ),
             // Header Card
             Card(
               elevation: 4,

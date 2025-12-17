@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/mosque.dart';
 import '../../providers/prayer_time_provider.dart';
+import '../../services/location_service.dart';
 import '../../widgets/prayer_time_card.dart';
 import '../../widgets/loading_indicator.dart';
 import '../../widgets/empty_state.dart';
@@ -23,6 +24,7 @@ class PrayerTimeScreen extends StatefulWidget {
 
 class _PrayerTimeScreenState extends State<PrayerTimeScreen> {
   DateTime _selectedDate = DateTime.now();
+  final LocationService _locationService = LocationService();
 
   @override
   void initState() {
@@ -134,6 +136,40 @@ class _PrayerTimeScreenState extends State<PrayerTimeScreen> {
                   const SizedBox(height: 12),
                   // Facilities section
                   _buildFacilitiesSection(context),
+                  const SizedBox(height: 16),
+                  // Google Maps button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        try {
+                          await _locationService.openNavigation(
+                            widget.mosque.latitude,
+                            widget.mosque.longitude,
+                          );
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(e.toString()),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.map),
+                      label: const Text('Open in Maps'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

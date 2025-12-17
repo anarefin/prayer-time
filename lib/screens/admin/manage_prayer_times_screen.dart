@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/mosque.dart';
+import '../../models/district.dart';
+import '../../models/area.dart';
 import '../../models/prayer_time.dart';
 import '../../providers/mosque_provider.dart';
+import '../../providers/district_provider.dart';
 import '../../providers/prayer_time_provider.dart';
 import '../../widgets/loading_indicator.dart';
 import '../../widgets/empty_state.dart';
@@ -18,13 +21,18 @@ class ManagePrayerTimesScreen extends StatefulWidget {
 }
 
 class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
+  String? _selectedDivision;
+  District? _selectedDistrict;
+  Area? _selectedArea;
   Mosque? _selectedMosque;
   DateTime _selectedDate = DateTime.now();
+  List<Mosque> _filteredMosques = [];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DistrictProvider>().loadDistricts();
       context.read<MosqueProvider>().loadAllMosques();
     });
   }
@@ -38,7 +46,7 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
       ),
       body: Column(
         children: [
-          // Mosque selector
+          // Hierarchical selector
           Card(
             margin: const EdgeInsets.all(16),
             child: Padding(
@@ -52,10 +60,16 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                   ),
-                  const SizedBox(height: 12),
-                  Consumer<MosqueProvider>(
-                    builder: (context, provider, child) {
-                      if (provider.isLoading) {
+                  const SizedBox(height: 4),
+                  Text(
+                    'Choose division, district, area and mosque',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 16),
+                  // Division dropdown
+                  Consumer<DistrictProvider>(
+                    builder: (context, districtProvider, child) {
+                      if (districtProvider.isLoading) {
                         return const Center(
                           child: Padding(
                             padding: EdgeInsets.all(16),
@@ -64,38 +78,156 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
                         );
                       }
 
-                      if (provider.mosques.isEmpty) {
+                      final divisions = districtProvider
+                          .getDistrictsByDivision()
+                          .keys
+                          .toList()
+                        ..sort();
+
+                      if (divisions.isEmpty) {
                         return const Text(
-                          'No mosques available. Please add mosques first.',
+                          'No divisions available. Please add districts first.',
                           style: TextStyle(color: Colors.red),
                         );
                       }
 
-                      return DropdownButtonFormField<Mosque>(
-                        value: _selectedMosque,
+                      return DropdownButtonFormField<String>(
+                        value: _selectedDivision,
                         decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.mosque),
-                          hintText: 'Choose a mosque',
+                          labelText: 'Division',
+                          prefixIcon: Icon(Icons.map),
                         ),
-                        items: provider.mosques.map((mosque) {
+                        items: divisions.map((division) {
                           return DropdownMenuItem(
-                            value: mosque,
-                            child: Text(mosque.name),
+                            value: division,
+                            child: Text(division),
                           );
                         }).toList(),
-                        onChanged: (mosque) {
+                        onChanged: (division) {
                           setState(() {
-                            _selectedMosque = mosque;
+                            _selectedDivision = division;
+                            _selectedDistrict = null;
+                            _selectedArea = null;
+                            _selectedMosque = null;
+                            _filteredMosques = [];
                           });
-                          if (mosque != null) {
-                            context
-                                .read<PrayerTimeProvider>()
-                                .loadPrayerTime(mosque.id, _selectedDate);
-                          }
                         },
                       );
                     },
                   ),
+                  const SizedBox(height: 12),
+                  // District dropdown
+                  if (_selectedDivision != null)
+                    Consumer<DistrictProvider>(
+                      builder: (context, districtProvider, child) {
+                        final districtsByDivision =
+                            districtProvider.getDistrictsByDivision();
+                        final districts =
+                            districtsByDivision[_selectedDivision] ?? [];
+
+                        return DropdownButtonFormField<District>(
+                          value: _selectedDistrict,
+                          decoration: const InputDecoration(
+                            labelText: 'District',
+                            prefixIcon: Icon(Icons.location_city),
+                          ),
+                          items: districts.map((district) {
+                            return DropdownMenuItem(
+                              value: district,
+                              child: Text(district.name),
+                            );
+                          }).toList(),
+                          onChanged: (district) {
+                            setState(() {
+                              _selectedDistrict = district;
+                              _selectedArea = null;
+                              _selectedMosque = null;
+                              _filteredMosques = [];
+                            });
+                            if (district != null) {
+                              context
+                                  .read<DistrictProvider>()
+                                  .loadAreasByDistrict(district.id);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  if (_selectedDivision != null) const SizedBox(height: 12),
+                  // Area dropdown
+                  if (_selectedDistrict != null)
+                    Consumer<DistrictProvider>(
+                      builder: (context, districtProvider, child) {
+                        final areas = districtProvider.areasByDistrict;
+
+                        if (areas.isEmpty) {
+                          return const Text(
+                            'No areas available for this district.',
+                            style: TextStyle(color: Colors.orange),
+                          );
+                        }
+
+                        return DropdownButtonFormField<Area>(
+                          value: _selectedArea,
+                          decoration: const InputDecoration(
+                            labelText: 'Area',
+                            prefixIcon: Icon(Icons.place),
+                          ),
+                          items: areas.map((area) {
+                            return DropdownMenuItem(
+                              value: area,
+                              child: Text(area.name),
+                            );
+                          }).toList(),
+                          onChanged: (area) {
+                            setState(() {
+                              _selectedArea = area;
+                              _selectedMosque = null;
+                            });
+                            if (area != null) {
+                              _loadMosquesByArea(area.id);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  if (_selectedDistrict != null) const SizedBox(height: 12),
+                  // Mosque dropdown
+                  if (_selectedArea != null)
+                    Consumer<MosqueProvider>(
+                      builder: (context, mosqueProvider, child) {
+                        if (_filteredMosques.isEmpty) {
+                          return const Text(
+                            'No mosques available for this area.',
+                            style: TextStyle(color: Colors.orange),
+                          );
+                        }
+
+                        return DropdownButtonFormField<Mosque>(
+                          value: _selectedMosque,
+                          decoration: const InputDecoration(
+                            labelText: 'Mosque',
+                            prefixIcon: Icon(Icons.mosque),
+                          ),
+                          items: _filteredMosques.map((mosque) {
+                            return DropdownMenuItem(
+                              value: mosque,
+                              child: Text(mosque.name),
+                            );
+                          }).toList(),
+                          onChanged: (mosque) {
+                            setState(() {
+                              _selectedMosque = mosque;
+                            });
+                            if (mosque != null) {
+                              context
+                                  .read<PrayerTimeProvider>()
+                                  .loadPrayerTime(mosque.id, _selectedDate);
+                            }
+                          },
+                        );
+                      },
+                    ),
                 ],
               ),
             ),
@@ -177,6 +309,10 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
                                 'Fajr', prayerTime.fajr, context),
                             _buildPrayerTimeRow(
                                 'Dhuhr', prayerTime.dhuhr, context),
+                            if (prayerTime.jummah != null)
+                              _buildPrayerTimeRow(
+                                  'Jummah', prayerTime.jummah!, context, 
+                                  isJummah: true),
                             _buildPrayerTimeRow(
                                 'Asr', prayerTime.asr, context),
                             _buildPrayerTimeRow(
@@ -225,37 +361,58 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
   }
 
   Widget _buildPrayerTimeRow(
-      String name, DateTime time, BuildContext context) {
+      String name, DateTime time, BuildContext context, {bool isJummah = false}) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
+      color: isJummah ? Colors.green.withOpacity(0.1) : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Icon(
-              Icons.access_time,
-              color: Theme.of(context).colorScheme.primary,
+              isJummah ? Icons.mosque : Icons.access_time,
+              color: isJummah ? Colors.green : Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(
-                name,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isJummah ? Colors.green.shade800 : null,
+                        ),
+                  ),
+                  if (isJummah)
+                    Text(
+                      'Friday Prayer',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.green.shade700,
+                          ),
                     ),
+                ],
               ),
             ),
             Text(
               DateFormat('HH:mm').format(time),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: isJummah ? Colors.green.shade800 : Theme.of(context).colorScheme.primary,
                   ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _loadMosquesByArea(String areaId) {
+    final allMosques = context.read<MosqueProvider>().mosques;
+    setState(() {
+      _filteredMosques = allMosques.where((m) => m.areaId == areaId).toList();
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -314,6 +471,7 @@ class _SetPrayerTimesDialogState extends State<_SetPrayerTimesDialog> {
   late TimeOfDay _asrTime;
   late TimeOfDay _maghribTime;
   late TimeOfDay _ishaTime;
+  TimeOfDay? _jummahTime;
   bool _isLoading = false;
 
   @override
@@ -325,6 +483,9 @@ class _SetPrayerTimesDialogState extends State<_SetPrayerTimesDialog> {
       _asrTime = TimeOfDay.fromDateTime(widget.existingPrayerTime!.asr);
       _maghribTime = TimeOfDay.fromDateTime(widget.existingPrayerTime!.maghrib);
       _ishaTime = TimeOfDay.fromDateTime(widget.existingPrayerTime!.isha);
+      _jummahTime = widget.existingPrayerTime!.jummah != null
+          ? TimeOfDay.fromDateTime(widget.existingPrayerTime!.jummah!)
+          : null;
     } else {
       // Default times
       _fajrTime = const TimeOfDay(hour: 5, minute: 30);
@@ -332,6 +493,7 @@ class _SetPrayerTimesDialogState extends State<_SetPrayerTimesDialog> {
       _asrTime = const TimeOfDay(hour: 16, minute: 30);
       _maghribTime = const TimeOfDay(hour: 19, minute: 15);
       _ishaTime = const TimeOfDay(hour: 20, minute: 30);
+      _jummahTime = null;
     }
   }
 
@@ -348,6 +510,8 @@ class _SetPrayerTimesDialogState extends State<_SetPrayerTimesDialog> {
               _buildTimeField('Fajr', _fajrTime, (time) => _fajrTime = time),
               const SizedBox(height: 12),
               _buildTimeField('Dhuhr', _dhuhrTime, (time) => _dhuhrTime = time),
+              const SizedBox(height: 12),
+              _buildJummahTimeField(),
               const SizedBox(height: 12),
               _buildTimeField('Asr', _asrTime, (time) => _asrTime = time),
               const SizedBox(height: 12),
@@ -401,6 +565,51 @@ class _SetPrayerTimesDialogState extends State<_SetPrayerTimesDialog> {
     );
   }
 
+  Widget _buildJummahTimeField() {
+    return InkWell(
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: _jummahTime ?? const TimeOfDay(hour: 13, minute: 0),
+        );
+        if (picked != null) {
+          setState(() {
+            _jummahTime = picked;
+          });
+        }
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Jummah (Friday Prayer)',
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_jummahTime != null)
+                IconButton(
+                  icon: const Icon(Icons.clear, size: 20),
+                  onPressed: () {
+                    setState(() {
+                      _jummahTime = null;
+                    });
+                  },
+                  tooltip: 'Clear Jummah time',
+                ),
+              const Icon(Icons.access_time),
+            ],
+          ),
+        ),
+        child: Text(
+          _jummahTime != null ? _jummahTime!.format(context) : 'Not set (Optional)',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: _jummahTime == null 
+                    ? Theme.of(context).textTheme.bodySmall?.color 
+                    : null,
+              ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -423,6 +632,10 @@ class _SetPrayerTimesDialogState extends State<_SetPrayerTimesDialog> {
           _maghribTime.hour, _maghribTime.minute),
       isha: DateTime(widget.date.year, widget.date.month, widget.date.day,
           _ishaTime.hour, _ishaTime.minute),
+      jummah: _jummahTime != null
+          ? DateTime(widget.date.year, widget.date.month, widget.date.day,
+              _jummahTime!.hour, _jummahTime!.minute)
+          : null,
     );
 
     final success = await provider.setPrayerTime(prayerTime);
