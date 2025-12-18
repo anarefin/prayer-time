@@ -5,10 +5,20 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/constants.dart';
 import '../models/mosque.dart';
 import 'firestore_service.dart';
+import 'connectivity_service.dart';
 
 /// Service for handling location and Qibla direction calculations
 class LocationService {
   final FirestoreService _firestoreService = FirestoreService();
+  final ConnectivityService _connectivityService = ConnectivityService();
+
+  /// Check if device is connected to internet (for map operations)
+  Future<void> _checkConnectivity() async {
+    final isConnected = await _connectivityService.checkConnectivity();
+    if (!isConnected) {
+      throw 'No internet connection. Please check your network to open maps.';
+    }
+  }
   /// Check if location services are enabled
   Future<bool> isLocationServiceEnabled() async {
     return await Geolocator.isLocationServiceEnabled();
@@ -208,6 +218,9 @@ class LocationService {
 
   /// Open Google Maps navigation to a mosque
   Future<void> openNavigation(double destinationLat, double destinationLng) async {
+    // Check connectivity first
+    await _checkConnectivity();
+    
     // Try native Google Maps app first (better UX)
     final nativeUrl = 'comgooglemaps://?daddr=$destinationLat,$destinationLng&directionsmode=driving';
     final nativeUri = Uri.parse(nativeUrl);
@@ -244,6 +257,9 @@ class LocationService {
     double userLng,
   ) async {
     if (mosques.isEmpty) return;
+    
+    // Check connectivity first
+    await _checkConnectivity();
     
     // Try native Google Maps app first
     final nativeUrl = 'comgooglemaps://?center=$userLat,$userLng&q=mosque&zoom=15';

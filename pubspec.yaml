@@ -33,6 +33,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   url_launcher: ^6.2.4
   shared_preferences: ^2.2.2
+  connectivity_plus: ^5.0.2
 
 dev_dependencies:
   flutter_test:

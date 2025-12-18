@@ -82,8 +82,19 @@ class ErrorState extends StatelessWidget {
     this.onRetry,
   }) : super(key: key);
 
+  /// Check if error is connectivity-related
+  bool get _isConnectivityError {
+    final lowerMessage = message.toLowerCase();
+    return lowerMessage.contains('internet') ||
+        lowerMessage.contains('connection') ||
+        lowerMessage.contains('network') ||
+        lowerMessage.contains('offline');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isConnectivity = _isConnectivityError;
+    
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -94,18 +105,20 @@ class ErrorState extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: (isConnectivity ? Colors.orange : Colors.red)
+                    .withOpacity(0.1),
                 borderRadius: BorderRadius.circular(50),
               ),
               child: Icon(
-                Icons.error_outline,
+                isConnectivity ? Icons.cloud_off : Icons.error_outline,
                 size: 50,
-                color: Colors.red.withOpacity(0.7),
+                color: (isConnectivity ? Colors.orange : Colors.red)
+                    .withOpacity(0.7),
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              'Oops!',
+              isConnectivity ? 'No Connection' : 'Oops!',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -119,12 +132,30 @@ class ErrorState extends StatelessWidget {
                   ),
               textAlign: TextAlign.center,
             ),
+            if (isConnectivity) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Please check your internet settings and try again.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.orange.shade700,
+                      fontStyle: FontStyle.italic,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
             if (onRetry != null) ...[
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: const Text('Try Again'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isConnectivity ? Colors.orange : null,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                ),
               ),
             ],
           ],

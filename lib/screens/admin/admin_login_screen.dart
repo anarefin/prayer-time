@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/loading_indicator.dart';
+import '../../widgets/math_captcha_widget.dart';
+import '../../services/captcha_service.dart';
 import 'admin_dashboard_screen.dart';
 
 /// Admin login screen with role verification
@@ -16,14 +19,103 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _captchaService = CaptchaService();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _isCaptchaValid = false;
+  
+  // Rate limiting
+  static const String _attemptCountKey = 'admin_login_attempts';
+  static const String _lockoutTimeKey = 'admin_login_lockout';
+  static const int _maxAttempts = 5;
+  static const int _lockoutDurationMinutes = 5;
+  int _attemptCount = 0;
+  DateTime? _lockoutTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRateLimitData();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// Load rate limiting data from local storage
+  Future<void> _loadRateLimitData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _attemptCount = prefs.getInt(_attemptCountKey) ?? 0;
+      final lockoutTimestamp = prefs.getInt(_lockoutTimeKey);
+      if (lockoutTimestamp != null) {
+        _lockoutTime = DateTime.fromMillisecondsSinceEpoch(lockoutTimestamp);
+        
+        // Check if lockout has expired
+        if (DateTime.now().isAfter(_lockoutTime!)) {
+          _attemptCount = 0;
+          _lockoutTime = null;
+          prefs.remove(_attemptCountKey);
+          prefs.remove(_lockoutTimeKey);
+        }
+      }
+    });
+  }
+
+  /// Save rate limiting data to local storage
+  Future<void> _saveRateLimitData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_attemptCountKey, _attemptCount);
+    if (_lockoutTime != null) {
+      await prefs.setInt(_lockoutTimeKey, _lockoutTime!.millisecondsSinceEpoch);
+    }
+  }
+
+  /// Increment failed attempt count
+  Future<void> _incrementAttemptCount() async {
+    setState(() {
+      _attemptCount++;
+    });
+    
+    if (_attemptCount >= _maxAttempts) {
+      setState(() {
+        _lockoutTime = DateTime.now().add(
+          Duration(minutes: _lockoutDurationMinutes),
+        );
+      });
+    }
+    
+    await _saveRateLimitData();
+  }
+
+  /// Reset attempt count on successful login
+  Future<void> _resetAttemptCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_attemptCountKey);
+    await prefs.remove(_lockoutTimeKey);
+    setState(() {
+      _attemptCount = 0;
+      _lockoutTime = null;
+    });
+  }
+
+  /// Check if currently locked out
+  bool get _isLockedOut {
+    if (_lockoutTime == null) return false;
+    return DateTime.now().isBefore(_lockoutTime!);
+  }
+
+  /// Get remaining lockout time
+  String get _remainingLockoutTime {
+    if (_lockoutTime == null) return '';
+    final remaining = _lockoutTime!.difference(DateTime.now());
+    if (remaining.isNegative) return '';
+    final minutes = remaining.inMinutes;
+    final seconds = remaining.inSeconds % 60;
+    return '${minutes}m ${seconds}s';
   }
 
   @override
@@ -128,12 +220,77 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
+                // CAPTCHA Widget
+                MathCaptchaWidget(
+                  captchaService: _captchaService,
+                  onValidationChanged: (isValid) {
+                    setState(() {
+                      _isCaptchaValid = isValid;
+                    });
+                  },
+                  difficulty: CaptchaDifficulty.easy,
+                ),
+                const SizedBox(height: 24),
+                // Rate limit warning
+                if (_attemptCount > 0 && !_isLockedOut)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Failed attempts: $_attemptCount/$_maxAttempts',
+                            style: TextStyle(
+                              color: Colors.orange.shade800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                // Lockout message
+                if (_isLockedOut)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.lock_clock, color: Colors.red, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Too many failed attempts. Try again in $_remainingLockoutTime',
+                            style: TextStyle(
+                              color: Colors.red.shade800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 // Login button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
+                    onPressed: (_isLoading || !_isCaptchaValid || _isLockedOut) 
+                        ? null 
+                        : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1565C0),
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -179,6 +336,28 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Check lockout status
+    if (_isLockedOut) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Account temporarily locked. Try again in $_remainingLockoutTime'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validate CAPTCHA
+    if (!_isCaptchaValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please complete the security verification'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -203,6 +382,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         if (authProvider.isLoggedIn) {
           // Check if user is admin
           if (authProvider.isAdmin) {
+            // Success! Reset attempt count
+            await _resetAttemptCount();
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -212,6 +393,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           } else {
             // User is not admin
             await authProvider.signOut();
+            await _incrementAttemptCount();
+            // Regenerate CAPTCHA
+            _captchaService.generateCaptcha();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Access denied. Admin credentials required.'),
@@ -221,6 +405,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           }
         } else if (!success) {
           // Only show error if actually not logged in
+          await _incrementAttemptCount();
+          // Regenerate CAPTCHA
+          _captchaService.generateCaptcha();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(authProvider.errorMessage ?? 'Login failed'),
@@ -245,6 +432,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           print('User is logged in despite error');
           // Check if user is admin
           if (authProvider.isAdmin) {
+            // Success! Reset attempt count
+            await _resetAttemptCount();
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -254,6 +443,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           } else {
             // User is not admin
             await authProvider.signOut();
+            await _incrementAttemptCount();
+            // Regenerate CAPTCHA
+            _captchaService.generateCaptcha();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Access denied. Admin credentials required.'),
@@ -263,6 +455,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           }
         } else {
           // Actually failed to login
+          await _incrementAttemptCount();
+          // Regenerate CAPTCHA
+          _captchaService.generateCaptcha();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Login failed: ${e.toString()}'),

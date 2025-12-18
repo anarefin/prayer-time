@@ -8,9 +8,11 @@ import 'providers/district_provider.dart';
 import 'providers/mosque_provider.dart';
 import 'providers/prayer_time_provider.dart';
 import 'providers/favorites_provider.dart';
+import 'providers/connectivity_provider.dart';
 import 'services/notification_service.dart';
 import 'screens/public/home_screen_new.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
+import 'widgets/connectivity_banner.dart';
 import 'utils/theme.dart';
 
 void main() async {
@@ -39,6 +41,10 @@ class PrayerTimeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Connectivity Provider (first, so others can depend on it)
+        ChangeNotifierProvider(
+          create: (_) => ConnectivityProvider(),
+        ),
         // Auth Provider
         ChangeNotifierProvider(
           create: (_) => AuthProvider()..initializeAuthListener(),
@@ -66,7 +72,9 @@ class PrayerTimeApp extends StatelessWidget {
             title: 'Prayer Time',
             theme: AppTheme.lightTheme,
             debugShowCheckedModeBanner: false,
-            home: _getHomeScreen(authProvider),
+            home: ConnectivityBanner(
+              child: _getHomeScreen(authProvider),
+            ),
           );
         },
       ),

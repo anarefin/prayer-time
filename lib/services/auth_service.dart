@@ -1,11 +1,21 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import 'connectivity_service.dart';
 
 /// Service for handling Firebase Authentication
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ConnectivityService _connectivityService = ConnectivityService();
+
+  /// Check if device is connected to internet
+  Future<void> _checkConnectivity() async {
+    final isConnected = await _connectivityService.checkConnectivity();
+    if (!isConnected) {
+      throw 'No internet connection. Please check your network and try again.';
+    }
+  }
 
   /// Get current user stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -21,6 +31,9 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    // Check connectivity first
+    await _checkConnectivity();
+    
     try {
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -62,6 +75,9 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    // Check connectivity first
+    await _checkConnectivity();
+    
     try {
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
@@ -204,6 +220,9 @@ class AuthService {
 
   /// Send password reset email
   Future<void> sendPasswordResetEmail(String email) async {
+    // Check connectivity first
+    await _checkConnectivity();
+    
     try {
       await _auth.sendPasswordResetEmail(email: email);
     } on FirebaseAuthException catch (e) {
