@@ -33,7 +33,8 @@ class _ManageAreasScreenState extends State<ManageAreasScreen> {
         title: const Text('Manage Areas'),
         backgroundColor: const Color(0xFF1565C0),
       ),
-      body: Consumer<MosqueProvider>(
+      body: SafeArea(
+        child: Consumer<MosqueProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
             return const LoadingIndicator(message: 'Loading areas...');
@@ -76,6 +77,7 @@ class _ManageAreasScreenState extends State<ManageAreasScreen> {
             ],
           );
         },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditDialog(context),

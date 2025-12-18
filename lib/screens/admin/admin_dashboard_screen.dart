@@ -42,8 +42,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -266,6 +267,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               },
             ),
           ],
+        ),
         ),
       ),
     );

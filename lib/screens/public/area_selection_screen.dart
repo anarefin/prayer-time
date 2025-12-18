@@ -45,7 +45,8 @@ class _AreaSelectionScreenState extends State<AreaSelectionScreen> {
           ],
         ),
       ),
-      body: Consumer<DistrictProvider>(
+      body: SafeArea(
+        child: Consumer<DistrictProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
             return const LoadingIndicator(message: 'Loading areas...');
@@ -115,6 +116,7 @@ class _AreaSelectionScreenState extends State<AreaSelectionScreen> {
             ],
           );
         },
+        ),
       ),
     );
   }

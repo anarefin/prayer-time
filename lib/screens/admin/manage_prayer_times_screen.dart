@@ -44,7 +44,8 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
         title: const Text('Manage Prayer Times'),
         backgroundColor: const Color(0xFF1565C0),
       ),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           // Hierarchical selector
           Card(
@@ -356,6 +357,7 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
               ),
             ),
         ],
+        ),
       ),
     );
   }

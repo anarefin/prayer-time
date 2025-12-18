@@ -110,9 +110,10 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
     final double angle = _qiblaDirection! - _currentHeading!;
 
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
           children: [
             const SizedBox(height: 20),
             // Header
@@ -339,6 +340,7 @@ class _QiblaCompassScreenState extends State<QiblaCompassScreen> {
             ),
           ],
         ),
+          ),
       ),
     );
   }

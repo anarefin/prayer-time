@@ -53,7 +53,8 @@ class _MosqueListScreenState extends State<MosqueListScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           // Search bar
           Padding(
@@ -188,6 +189,7 @@ class _MosqueListScreenState extends State<MosqueListScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }

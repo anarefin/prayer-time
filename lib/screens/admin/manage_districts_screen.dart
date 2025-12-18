@@ -28,7 +28,8 @@ class _ManageDistrictsScreenState extends State<ManageDistrictsScreen> {
       appBar: AppBar(
         title: const Text('Manage Districts'),
       ),
-      body: Consumer<DistrictProvider>(
+      body: SafeArea(
+        child: Consumer<DistrictProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
             return const LoadingIndicator(message: 'Loading districts...');
@@ -113,6 +114,7 @@ class _ManageDistrictsScreenState extends State<ManageDistrictsScreen> {
             },
           );
         },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(context),

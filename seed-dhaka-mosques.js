@@ -34,6 +34,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: true,
     isWheelchairAccessible: true,
+    hasChairPrayer: true,
     description: 'Large mosque with modern facilities in the heart of Gulshan'
   },
   {
@@ -49,6 +50,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: false,
     isWheelchairAccessible: false,
+    hasChairPrayer: false,
     description: 'Community mosque in Gulshan residential area'
   },
   // Banani Area
@@ -65,6 +67,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: true,
     isWheelchairAccessible: true,
+    hasChairPrayer: true,
     description: 'Modern mosque with excellent facilities'
   },
   // Dhanmondi Area
@@ -81,6 +84,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: false,
     isWheelchairAccessible: false,
+    hasChairPrayer: false,
     description: 'Community mosque in Dhanmondi residential area'
   },
   {
@@ -96,6 +100,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: false,
     isWheelchairAccessible: false,
+    hasChairPrayer: false,
     description: 'Historic mosque dating back to Mughal era'
   },
   // Mirpur Area
@@ -112,6 +117,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: true,
     isWheelchairAccessible: true,
+    hasChairPrayer: true,
     description: 'Large central mosque serving Mirpur community'
   },
   // Uttara Area
@@ -128,6 +134,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: true,
     isWheelchairAccessible: true,
+    hasChairPrayer: true,
     description: 'Modern mosque with state-of-the-art facilities'
   },
   {
@@ -143,6 +150,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: false,
     isWheelchairAccessible: false,
+    hasChairPrayer: false,
     description: 'Community mosque in Uttara'
   },
   // Mohammadpur Area
@@ -159,6 +167,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: true,
     isWheelchairAccessible: true,
+    hasChairPrayer: true,
     description: 'Central mosque in Mohammadpur with large prayer hall'
   },
   // Motijheel Area
@@ -175,6 +184,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: true,
     isWheelchairAccessible: true,
+    hasChairPrayer: true,
     description: 'National Mosque of Bangladesh with capacity for 30,000 worshippers'
   },
   // Old Dhaka Area
@@ -191,6 +201,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: false,
     isWheelchairAccessible: false,
+    hasChairPrayer: false,
     description: 'Historic Mughal-era mosque built in 1704-05'
   },
   {
@@ -206,6 +217,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: false,
     isWheelchairAccessible: false,
+    hasChairPrayer: false,
     description: 'Historic mosque famous for its star motifs and Japanese porcelain tiles'
   },
   // Tejgaon Area
@@ -222,6 +234,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: true,
     isWheelchairAccessible: true,
+    hasChairPrayer: true,
     description: 'Large mosque serving the industrial area workers'
   },
   // Khilgaon Area
@@ -238,6 +251,7 @@ const dhakaМosques = [
     hasWudu: true,
     hasAC: false,
     isWheelchairAccessible: false,
+    hasChairPrayer: false,
     description: 'Community mosque in Khilgaon residential area'
   }
 ];

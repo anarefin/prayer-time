@@ -125,9 +125,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         title: const Text('Admin Login'),
         backgroundColor: const Color(0xFF1565C0), // Admin blue color
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
           child: Form(
             key: _formKey,
             child: Column(
@@ -329,6 +330,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             ),
           ),
         ),
+          ),
       ),
     );
   }

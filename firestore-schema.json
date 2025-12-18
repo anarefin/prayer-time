@@ -86,6 +86,68 @@
           "required": true,
           "description": "GPS longitude coordinate",
           "example": 101.7123
+        },
+        "hasWomenPrayer": {
+          "type": "boolean",
+          "required": false,
+          "description": "Has women prayer area",
+          "example": false,
+          "default": false
+        },
+        "hasCarParking": {
+          "type": "boolean",
+          "required": false,
+          "description": "Has car parking facility",
+          "example": false,
+          "default": false
+        },
+        "hasBikeParking": {
+          "type": "boolean",
+          "required": false,
+          "description": "Has bike/motorcycle parking",
+          "example": false,
+          "default": false
+        },
+        "hasCycleParking": {
+          "type": "boolean",
+          "required": false,
+          "description": "Has bicycle parking",
+          "example": false,
+          "default": false
+        },
+        "hasWudu": {
+          "type": "boolean",
+          "required": false,
+          "description": "Has wudu facilities",
+          "example": true,
+          "default": true
+        },
+        "hasAC": {
+          "type": "boolean",
+          "required": false,
+          "description": "Has air conditioning",
+          "example": false,
+          "default": false
+        },
+        "isWheelchairAccessible": {
+          "type": "boolean",
+          "required": false,
+          "description": "Wheelchair accessible",
+          "example": false,
+          "default": false
+        },
+        "hasChairPrayer": {
+          "type": "boolean",
+          "required": false,
+          "description": "Has chairs/tools for sitting prayer",
+          "example": false,
+          "default": false
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "description": "Additional mosque description",
+          "example": "Historic mosque in the city center"
         }
       },
       "sampleDocument": {
@@ -93,7 +155,16 @@
         "address": "Jalan Duta, 50480 Kuala Lumpur",
         "areaId": "area_kl_001",
         "latitude": 3.1569,
-        "longitude": 101.7123
+        "longitude": 101.7123,
+        "hasWomenPrayer": false,
+        "hasCarParking": true,
+        "hasBikeParking": true,
+        "hasCycleParking": false,
+        "hasWudu": true,
+        "hasAC": true,
+        "isWheelchairAccessible": false,
+        "hasChairPrayer": false,
+        "description": "Federal Territory Mosque"
       }
     },
     "prayer_times": {

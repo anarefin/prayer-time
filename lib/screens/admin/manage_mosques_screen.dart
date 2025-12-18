@@ -43,7 +43,8 @@ class _ManageMosquesScreenState extends State<ManageMosquesScreen> {
         title: const Text('Manage Mosques'),
         backgroundColor: const Color(0xFF1565C0),
       ),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           // Search bar
           Padding(
@@ -116,6 +117,7 @@ class _ManageMosquesScreenState extends State<ManageMosquesScreen> {
             ),
           ),
         ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToAddEdit(context),

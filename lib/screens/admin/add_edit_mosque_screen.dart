@@ -85,13 +85,14 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
         title: Text(isEdit ? 'Edit Mosque' : 'Add Mosque'),
         backgroundColor: const Color(0xFF1565C0),
       ),
-      body: Consumer<MosqueProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && provider.areas.isEmpty) {
-            return const LoadingIndicator(message: 'Loading areas...');
-          }
+      body: SafeArea(
+        child: Consumer<MosqueProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading && provider.areas.isEmpty) {
+              return const LoadingIndicator(message: 'Loading areas...');
+            }
 
-          return SingleChildScrollView(
+            return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Form(
               key: _formKey,
@@ -365,6 +366,7 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
             ),
           );
         },
+        ),
       ),
     );
   }

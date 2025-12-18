@@ -113,9 +113,9 @@ class PrayerTime {
     }
   }
 
-  /// Format time for display (HH:mm)
+  /// Format time for display (h:mm a)
   static String formatTime(DateTime time) {
-    return DateFormat('HH:mm').format(time);
+    return DateFormat('h:mm a').format(time);
   }
 
   /// Get all prayer times as a map

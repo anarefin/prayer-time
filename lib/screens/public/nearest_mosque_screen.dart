@@ -122,11 +122,12 @@ class _NearestMosqueScreenState extends State<NearestMosqueScreen> {
           );
         }
 
-        return Column(
-          children: [
-            // Header with mosque count and "View All on Map" button
-            Padding(
-              padding: const EdgeInsets.all(16),
+        return SafeArea(
+          child: Column(
+            children: [
+              // Header with mosque count and "View All on Map" button
+              Padding(
+                padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -246,6 +247,7 @@ class _NearestMosqueScreenState extends State<NearestMosqueScreen> {
               ),
             ),
           ],
+            ),
         );
       },
     );

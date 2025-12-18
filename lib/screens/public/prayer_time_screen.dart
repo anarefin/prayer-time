@@ -88,7 +88,8 @@ class _PrayerTimeScreenState extends State<PrayerTimeScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           // Mosque info card
           Card(
@@ -301,6 +302,7 @@ class _PrayerTimeScreenState extends State<PrayerTimeScreen> {
           ),
         ],
       ),
+        ),
     );
   }
 
@@ -362,6 +364,14 @@ class _PrayerTimeScreenState extends State<PrayerTimeScreen> {
         'icon': FacilityIconData.getIcon('isWheelchairAccessible'),
         'label': FacilityIconData.getLabel('isWheelchairAccessible'),
         'color': FacilityIconData.getColor('isWheelchairAccessible'),
+      });
+    }
+    if (widget.mosque.hasChairPrayer) {
+      facilities.add({
+        'key': 'hasChairPrayer',
+        'icon': FacilityIconData.getIcon('hasChairPrayer'),
+        'label': FacilityIconData.getLabel('hasChairPrayer'),
+        'color': FacilityIconData.getColor('hasChairPrayer'),
       });
     }
 

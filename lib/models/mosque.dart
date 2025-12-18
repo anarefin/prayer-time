@@ -13,6 +13,7 @@ class Mosque {
   final bool hasWudu;
   final bool hasAC;
   final bool isWheelchairAccessible;
+  final bool hasChairPrayer;
   final String? description;
 
   Mosque({
@@ -29,6 +30,7 @@ class Mosque {
     this.hasWudu = true,
     this.hasAC = false,
     this.isWheelchairAccessible = false,
+    this.hasChairPrayer = false,
     this.description,
   });
 
@@ -48,6 +50,7 @@ class Mosque {
       hasWudu: json['hasWudu'] as bool? ?? true,
       hasAC: json['hasAC'] as bool? ?? false,
       isWheelchairAccessible: json['isWheelchairAccessible'] as bool? ?? false,
+      hasChairPrayer: json['hasChairPrayer'] as bool? ?? false,
       description: json['description'] as String?,
     );
   }
@@ -67,6 +70,7 @@ class Mosque {
       'hasWudu': hasWudu,
       'hasAC': hasAC,
       'isWheelchairAccessible': isWheelchairAccessible,
+      'hasChairPrayer': hasChairPrayer,
       'description': description,
     };
   }
@@ -86,6 +90,7 @@ class Mosque {
     bool? hasWudu,
     bool? hasAC,
     bool? isWheelchairAccessible,
+    bool? hasChairPrayer,
     String? description,
   }) {
     return Mosque(
@@ -103,6 +108,7 @@ class Mosque {
       hasAC: hasAC ?? this.hasAC,
       isWheelchairAccessible:
           isWheelchairAccessible ?? this.isWheelchairAccessible,
+      hasChairPrayer: hasChairPrayer ?? this.hasChairPrayer,
       description: description ?? this.description,
     );
   }
@@ -117,6 +123,7 @@ class Mosque {
     if (hasWudu) facilities.add('Wudu Facilities');
     if (hasAC) facilities.add('Air Conditioning');
     if (isWheelchairAccessible) facilities.add('Wheelchair Accessible');
+    if (hasChairPrayer) facilities.add('Sitting Prayer');
     return facilities;
   }
 

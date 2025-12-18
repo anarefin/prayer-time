@@ -51,7 +51,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16, 
+            16, 
+            16, 
+            16 + MediaQuery.of(context).padding.bottom,
+          ),
           itemCount: provider.favoriteMosques.length,
           itemBuilder: (context, index) {
             final mosque = provider.favoriteMosques[index];

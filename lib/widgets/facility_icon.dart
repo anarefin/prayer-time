@@ -60,6 +60,8 @@ class FacilityIconData {
         return Icons.ac_unit;
       case 'isWheelchairAccessible':
         return Icons.accessible;
+      case 'hasChairPrayer':
+        return Icons.event_seat;
       default:
         return Icons.check_circle;
     }
@@ -81,6 +83,8 @@ class FacilityIconData {
         return 'AC';
       case 'isWheelchairAccessible':
         return 'Wheelchair';
+      case 'hasChairPrayer':
+        return 'Sitting Prayer';
       default:
         return facilityKey;
     }
@@ -102,6 +106,8 @@ class FacilityIconData {
         return Colors.cyan;
       case 'isWheelchairAccessible':
         return Colors.teal;
+      case 'hasChairPrayer':
+        return Colors.brown;
       default:
         return Colors.green;
     }

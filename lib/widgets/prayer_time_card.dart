@@ -72,7 +72,7 @@ class PrayerTimeCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  DateFormat('HH:mm').format(prayerTime),
+                  DateFormat('h:mm a').format(prayerTime),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: isNext
