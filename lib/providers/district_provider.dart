@@ -189,6 +189,15 @@ class DistrictProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Reset all state and reload districts (useful for connectivity restoration)
+  Future<void> resetAndReload() async {
+    _selectedDistrictId = null;
+    _selectedAreaId = null;
+    _areasByDistrict = [];
+    _errorMessage = null;
+    await loadDistricts();
+  }
+
   /// Get district by ID (from loaded list or fetch from Firestore)
   Future<District?> getDistrictByIdAsync(String districtId) async {
     // First try to find in loaded districts

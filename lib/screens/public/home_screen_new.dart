@@ -5,6 +5,7 @@ import '../../models/area.dart';
 import '../../providers/district_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
+import '../../providers/connectivity_provider.dart';
 import '../../services/location_service.dart';
 import 'mosque_list_screen.dart';
 import 'favorites_screen.dart';
@@ -112,6 +113,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
   Area? _selectedArea;
   final LocationService _locationService = LocationService();
   bool _hasAttemptedAutoLocation = false;
+  bool _wasOffline = false;
 
   @override
   void initState() {
@@ -119,6 +121,39 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeLocation();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkConnectivityAndRefresh();
+  }
+
+  /// Check connectivity and refresh data if coming back online
+  void _checkConnectivityAndRefresh() {
+    final connectivityProvider = context.watch<ConnectivityProvider>();
+    
+    // If was offline and now online, refresh districts
+    if (_wasOffline && connectivityProvider.isConnected) {
+      print('📡 Connectivity restored - refreshing districts');
+      _wasOffline = false;
+      
+      // Reset selections to avoid stale references
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _selectedDivision = null;
+            _selectedDistrict = null;
+            _selectedArea = null;
+          });
+          
+          // Reload districts from Firestore
+          context.read<DistrictProvider>().loadDistricts();
+        }
+      });
+    } else if (!connectivityProvider.isConnected) {
+      _wasOffline = true;
+    }
   }
 
   /// Initialize location and auto-select area based on user's current position
@@ -672,13 +707,20 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
     required List<District> districts,
     required Function(District?) onChanged,
   }) {
+    // Validate that selected district is in the list
+    final validSelectedDistrict = _selectedDistrict != null && 
+        districts.any((d) => d.id == _selectedDistrict!.id)
+        ? _selectedDistrict
+        : null;
+    
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey[300]!),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonFormField<District>(
-        value: _selectedDistrict,
+        key: ValueKey('district_${districts.length}_${validSelectedDistrict?.id}'),
+        value: validSelectedDistrict,
         decoration: InputDecoration(
           labelText: 'District',
           prefixIcon:
@@ -701,13 +743,20 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
     required List<Area> areas,
     required Function(Area?) onChanged,
   }) {
+    // Validate that selected area is in the list
+    final validSelectedArea = _selectedArea != null && 
+        areas.any((a) => a.id == _selectedArea!.id)
+        ? _selectedArea
+        : null;
+    
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey[300]!),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonFormField<Area>(
-        value: _selectedArea,
+        key: ValueKey('area_${areas.length}_${validSelectedArea?.id}'),
+        value: validSelectedArea,
         decoration: InputDecoration(
           labelText: 'Area',
           prefixIcon: Icon(Icons.location_on,
