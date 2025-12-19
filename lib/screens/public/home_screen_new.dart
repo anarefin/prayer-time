@@ -7,6 +7,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/connectivity_provider.dart';
 import '../../services/location_service.dart';
+import '../../services/local_storage_service.dart';
+import '../../widgets/location_detection_dialog.dart';
 import 'mosque_list_screen.dart';
 import 'favorites_screen.dart';
 import 'nearest_mosque_screen.dart';
@@ -107,20 +109,61 @@ class ImprovedHomeTab extends StatefulWidget {
   State<ImprovedHomeTab> createState() => _ImprovedHomeTabState();
 }
 
-class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
+class _ImprovedHomeTabState extends State<ImprovedHomeTab>
+    with WidgetsBindingObserver {
   String? _selectedDivision;
   District? _selectedDistrict;
   Area? _selectedArea;
   final LocationService _locationService = LocationService();
-  bool _hasAttemptedAutoLocation = false;
+  final LocalStorageService _localStorageService = LocalStorageService();
   bool _wasOffline = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeLocation();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // When app resumes, check location again
+    if (state == AppLifecycleState.resumed && _isInitialized) {
+      _attemptLocationDetectionOnResume();
+    }
+  }
+
+  /// Attempt location detection when app resumes (e.g., after enabling location in settings)
+  Future<void> _attemptLocationDetectionOnResume() async {
+    if (!mounted) return;
+
+    final districtProvider = context.read<DistrictProvider>();
+    
+    // Check if districts are loaded
+    if (districtProvider.districts.isEmpty) {
+      await districtProvider.loadDistricts();
+    }
+
+    // Load saved preference first
+    await _loadSavedPreference();
+
+    // Always attempt location detection with dialog
+    if (_selectedArea != null) {
+      await _checkLocationUpdate();
+    } else {
+      await _attemptAutoLocation();
+    }
   }
 
   @override
@@ -147,8 +190,12 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
             _selectedArea = null;
           });
           
-          // Reload districts from Firestore
-          context.read<DistrictProvider>().loadDistricts();
+          // Reload districts from Firestore and re-initialize
+          context.read<DistrictProvider>().loadDistricts().then((_) {
+            if (mounted) {
+              _initializeLocation();
+            }
+          });
         }
       });
     } else if (!connectivityProvider.isConnected) {
@@ -156,37 +203,256 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
     }
   }
 
+  /// Load saved location preference
+  Future<bool> _loadSavedPreference() async {
+    if (!mounted) return false;
+
+    final preference = await _localStorageService.getLocationPreference();
+    if (preference == null) return false;
+
+    final districtProvider = context.read<DistrictProvider>();
+
+    try {
+      // Load the saved area
+      final success = await districtProvider.autoSelectLocationFromArea(
+        preference['areaId']!,
+      );
+
+      if (success && mounted) {
+        // Get the selected area and district
+        final area = districtProvider.getSelectedArea();
+        final district = districtProvider.getSelectedDistrict();
+
+        if (area != null && district != null) {
+          setState(() {
+            _selectedDivision = district.divisionName;
+            _selectedDistrict = district;
+            _selectedArea = area;
+          });
+          return true;
+        }
+      }
+    } catch (e) {
+      print('Error loading saved preference: $e');
+    }
+
+    return false;
+  }
+
   /// Initialize location and auto-select area based on user's current position
   Future<void> _initializeLocation() async {
     if (!mounted) return;
 
     final districtProvider = context.read<DistrictProvider>();
-    
+
     // First, load districts
     await districtProvider.loadDistricts();
-    
-    // Only attempt auto-location once
-    if (_hasAttemptedAutoLocation) return;
-    _hasAttemptedAutoLocation = true;
 
-    // Try to auto-select based on location
-    await _attemptAutoLocation();
+    // Try to load saved preference first (to populate dropdowns immediately)
+    final hasSavedPreference = await _loadSavedPreference();
+
+    // Mark as initialized
+    _isInitialized = true;
+
+    // Always attempt to detect location with dialog on app open
+    if (hasSavedPreference) {
+      // Has saved preference, check if location changed
+      await _checkLocationUpdate();
+    } else {
+      // No saved preference, do first-time auto-location
+      await _attemptAutoLocation();
+    }
+  }
+
+  /// Save location preference to local storage
+  Future<void> _saveLocationPreference() async {
+    if (_selectedDivision != null &&
+        _selectedDistrict != null &&
+        _selectedArea != null) {
+      await _localStorageService.saveLocationPreference(
+        divisionName: _selectedDivision!,
+        districtId: _selectedDistrict!.id,
+        areaId: _selectedArea!.id,
+      );
+    }
+  }
+
+  /// Check if user's current location differs significantly from saved location
+  /// and update if necessary
+  Future<void> _checkLocationUpdate() async {
+    if (!mounted) return;
+    if (_selectedArea == null) return;
+
+    // Check if location services are enabled first
+    final isLocationEnabled = await _locationService.isLocationServiceEnabled();
+    
+    if (!isLocationEnabled) {
+      // Show location disabled dialog
+      if (mounted) {
+        await LocationDisabledDialog.show(context);
+      }
+      return;
+    }
+
+    // Show loading dialog while checking location
+    bool dialogCancelled = false;
+    LocationDetectionDialog.show(context).then((cancelled) {
+      if (cancelled == true) {
+        dialogCancelled = true;
+      }
+    });
+
+    try {
+      // Get current location with dialog showing
+      final nearestMosque = await _locationService.findNearestMosque();
+
+      // Dismiss dialog
+      if (mounted && !dialogCancelled) {
+        LocationDetectionDialog.dismiss(context);
+      }
+
+      if (dialogCancelled) return;
+
+      if (nearestMosque == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No nearby mosques found. Using saved location.'),
+              duration: Duration(seconds: 3),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Check if the nearest mosque is in a different area
+      if (nearestMosque.areaId != _selectedArea!.id) {
+        // Location has changed significantly
+        if (!mounted) return;
+        final districtProvider = context.read<DistrictProvider>();
+
+        // Auto-select new location based on area
+        final success = await districtProvider.autoSelectLocationFromArea(
+          nearestMosque.areaId,
+        );
+
+        if (success && mounted) {
+          final area = districtProvider.getSelectedArea();
+          final district = districtProvider.getSelectedDistrict();
+
+          if (area != null && district != null) {
+            setState(() {
+              _selectedDivision = district.divisionName;
+              _selectedDistrict = district;
+              _selectedArea = area;
+            });
+
+            // Save new preference
+            await _saveLocationPreference();
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Location updated to ${area.name} based on your current position.',
+                  ),
+                  duration: const Duration(seconds: 4),
+                  backgroundColor: Colors.green,
+                  action: SnackBarAction(
+                    label: 'OK',
+                    textColor: Colors.white,
+                    onPressed: () {},
+                  ),
+                ),
+              );
+            }
+          }
+        }
+      } else {
+        // Same location, just show brief confirmation
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Location confirmed: ${_selectedArea!.name}'),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Dismiss dialog on error
+      if (mounted && !dialogCancelled) {
+        LocationDetectionDialog.dismiss(context);
+      }
+
+      if (!mounted || dialogCancelled) return;
+
+      // Handle errors
+      String message;
+      if (e.toString().contains('permission denied')) {
+        message = 'Location permission denied. Using saved location.';
+      } else if (e.toString().contains('permanently denied')) {
+        message = 'Location permission denied. Please enable in settings.';
+      } else {
+        message = 'Could not detect location. Using saved location.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   /// Attempt to auto-select location based on GPS
-  Future<void> _attemptAutoLocation() async {
+  Future<void> _attemptAutoLocation({bool updateExisting = false}) async {
     if (!mounted) return;
+
+    // Check if location services are enabled first
+    final isLocationEnabled = await _locationService.isLocationServiceEnabled();
+    
+    if (!isLocationEnabled) {
+      // Show location disabled dialog immediately
+      if (mounted) {
+        await LocationDisabledDialog.show(context);
+      }
+      return;
+    }
+
+    // Show loading dialog
+    bool dialogCancelled = false;
+    LocationDetectionDialog.show(context).then((cancelled) {
+      if (cancelled == true) {
+        dialogCancelled = true;
+      }
+    });
 
     try {
       // Find nearest mosque within 50km radius
       final nearestMosque = await _locationService.findNearestMosque();
-      
+
+      // Check if dialog was cancelled
+      if (dialogCancelled) {
+        return;
+      }
+
+      // Dismiss loading dialog
+      if (mounted) {
+        LocationDetectionDialog.dismiss(context);
+      }
+
       if (nearestMosque == null) {
         // No nearby mosque found
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('No nearby mosques found. Please select your area manually.'),
+              content: Text(
+                  'No nearby mosques found. Please select your area manually.'),
               duration: Duration(seconds: 4),
               backgroundColor: Colors.orange,
             ),
@@ -197,31 +463,36 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
 
       // Get the area ID from the mosque
       final areaId = nearestMosque.areaId;
-      
+
       if (!mounted) return;
       final districtProvider = context.read<DistrictProvider>();
-      
+
       // Auto-select location based on area
       final success = await districtProvider.autoSelectLocationFromArea(areaId);
-      
+
       if (success && mounted) {
         // Get the selected area and district for display
         final area = districtProvider.getSelectedArea();
         final district = districtProvider.getSelectedDistrict();
-        
+
         if (area != null && district != null) {
           setState(() {
             _selectedDivision = district.divisionName;
             _selectedDistrict = district;
             _selectedArea = area;
           });
-          
+
+          // Save preference after auto-selection
+          await _saveLocationPreference();
+
           if (mounted) {
+            final message = updateExisting
+                ? 'Location updated to ${area.name} based on your current position.'
+                : 'Auto-selected ${area.name} based on your location. You can change it anytime.';
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  'Auto-selected ${area.name} based on your location. You can change it anytime.',
-                ),
+                content: Text(message),
                 duration: const Duration(seconds: 4),
                 backgroundColor: Colors.green,
                 action: SnackBarAction(
@@ -235,20 +506,31 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
         }
       }
     } catch (e) {
+      // Dismiss loading dialog
+      if (mounted && !dialogCancelled) {
+        LocationDetectionDialog.dismiss(context);
+      }
+
       // Handle various location errors
       if (!mounted) return;
-      
+
+      // Check if location services are disabled
+      if (e.toString().contains('Location services are disabled')) {
+        // Show location disabled dialog
+        await LocationDisabledDialog.show(context);
+        return;
+      }
+
       String message;
       if (e.toString().contains('permission denied')) {
         message = 'Location permission denied. Please select your area manually.';
-      } else if (e.toString().contains('Location services are disabled')) {
-        message = 'Location services are disabled. Please enable them or select your area manually.';
       } else if (e.toString().contains('permanently denied')) {
-        message = 'Location permission permanently denied. Please enable it in settings or select your area manually.';
+        message =
+            'Location permission permanently denied. Please enable it in settings or select your area manually.';
       } else {
         message = 'Unable to get your location. Please select your area manually.';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
@@ -511,6 +793,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
                           label: 'Division',
                           value: _selectedDivision,
                           items: divisions,
+                          enabled: true,
                           onChanged: (value) {
                             setState(() {
                               _selectedDivision = value;
@@ -523,93 +806,130 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
                     ),
                     const SizedBox(height: 16),
 
-                    // District Dropdown
-                    if (_selectedDivision != null)
-                      Consumer<DistrictProvider>(
-                        builder: (context, provider, _) {
-                          final districtsByDivision =
-                              provider.getDistrictsByDivision();
-                          final districts =
-                              districtsByDivision[_selectedDivision] ?? [];
+                    // District Dropdown - Always visible
+                    Consumer<DistrictProvider>(
+                      builder: (context, provider, _) {
+                        final districtsByDivision =
+                            provider.getDistrictsByDivision();
+                        final districts =
+                            districtsByDivision[_selectedDivision] ?? [];
+                        final isEnabled = _selectedDivision != null;
 
-                          return _buildDistrictDropdown(
-                            districts: districts,
-                            onChanged: (district) {
-                              setState(() {
-                                _selectedDistrict = district;
-                                _selectedArea = null;
-                              });
-                              if (district != null) {
-                                provider.selectDistrict(district.id);
-                                provider.loadAreasByDistrict(district.id);
-                              }
-                            },
-                          );
-                        },
-                      ),
-                    if (_selectedDivision != null) const SizedBox(height: 16),
-
-                    // Area Dropdown
-                    if (_selectedDistrict != null)
-                      Consumer<DistrictProvider>(
-                        builder: (context, provider, _) {
-                          if (provider.isLoading) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(20),
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-                          }
-
-                          return _buildAreaDropdown(
-                            areas: provider.areasByDistrict,
-                            onChanged: (area) {
-                              setState(() {
-                                _selectedArea = area;
-                              });
-                            },
-                          );
-                        },
-                      ),
-                    if (_selectedDistrict != null) const SizedBox(height: 24),
-
-                    // Find Mosques Button
-                    if (_selectedArea != null)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    MosqueListScreen(area: _selectedArea!),
-                              ),
-                            );
+                        return _buildDistrictDropdown(
+                          districts: districts.isEmpty
+                              ? [
+                                  District(
+                                    id: 'placeholder',
+                                    name: 'Select division first',
+                                    divisionName: '',
+                                    order: 0,
+                                  )
+                                ]
+                              : districts,
+                          enabled: isEnabled,
+                          onChanged: (district) {
+                            if (district?.id == 'placeholder') return;
+                            setState(() {
+                              _selectedDistrict = district;
+                              _selectedArea = null;
+                            });
+                            if (district != null) {
+                              provider.selectDistrict(district.id);
+                              provider.loadAreasByDistrict(district.id);
+                            }
                           },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Area Dropdown - Always visible
+                    Consumer<DistrictProvider>(
+                      builder: (context, provider, _) {
+                        if (provider.isLoading && _selectedDistrict != null) {
+                          return Container(
+                            height: 60,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey[300]!),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.search),
-                              SizedBox(width: 8),
-                              Text(
-                                'Find Mosques',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            child: const Center(
+                              child: SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
                               ),
-                            ],
+                            ),
+                          );
+                        }
+
+                        final areas = provider.areasByDistrict;
+                        final isEnabled = _selectedDistrict != null;
+
+                        return _buildAreaDropdown(
+                          areas: areas.isEmpty
+                              ? [
+                                  Area(
+                                    id: 'placeholder',
+                                    name: 'Select district first',
+                                    districtId: '',
+                                    order: 0,
+                                  )
+                                ]
+                              : areas,
+                          enabled: isEnabled,
+                          onChanged: (area) async {
+                            if (area?.id == 'placeholder') return;
+                            setState(() {
+                              _selectedArea = area;
+                            });
+                            // Save preference when user manually selects area
+                            if (area != null) {
+                              await _saveLocationPreference();
+                            }
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Find Mosques Button - Always visible
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _selectedArea != null
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        MosqueListScreen(area: _selectedArea!),
+                                  ),
+                                );
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.search),
+                            SizedBox(width: 8),
+                            Text(
+                              'Find Mosques',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -678,27 +998,43 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
     required String? value,
     required List<String> items,
     required Function(String?) onChanged,
+    bool enabled = true,
   }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButtonFormField<String>(
-        value: value,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: Theme.of(context).colorScheme.primary),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        border: Border.all(
+          color: enabled ? Colors.grey[300]! : Colors.grey[200]!,
         ),
-        items: items.map((item) {
-          return DropdownMenuItem(
-            value: item,
-            child: Text(item),
-          );
-        }).toList(),
-        onChanged: onChanged,
+        borderRadius: BorderRadius.circular(12),
+        color: enabled ? null : Colors.grey[50],
+      ),
+      child: IgnorePointer(
+        ignoring: !enabled,
+        child: Opacity(
+          opacity: enabled ? 1.0 : 0.5,
+          child: DropdownButtonFormField<String>(
+            value: value,
+            decoration: InputDecoration(
+              labelText: label,
+              prefixIcon: Icon(
+                icon,
+                color: enabled
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey[400],
+              ),
+              border: InputBorder.none,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            items: items.map((item) {
+              return DropdownMenuItem(
+                value: item,
+                child: Text(item),
+              );
+            }).toList(),
+            onChanged: enabled ? onChanged : null,
+          ),
+        ),
       ),
     );
   }
@@ -706,35 +1042,51 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
   Widget _buildDistrictDropdown({
     required List<District> districts,
     required Function(District?) onChanged,
+    bool enabled = true,
   }) {
     // Validate that selected district is in the list
-    final validSelectedDistrict = _selectedDistrict != null && 
-        districts.any((d) => d.id == _selectedDistrict!.id)
+    final validSelectedDistrict = _selectedDistrict != null &&
+            districts.any((d) => d.id == _selectedDistrict!.id)
         ? _selectedDistrict
         : null;
-    
+
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButtonFormField<District>(
-        key: ValueKey('district_${districts.length}_${validSelectedDistrict?.id}'),
-        value: validSelectedDistrict,
-        decoration: InputDecoration(
-          labelText: 'District',
-          prefixIcon:
-              Icon(Icons.map, color: Theme.of(context).colorScheme.primary),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        border: Border.all(
+          color: enabled ? Colors.grey[300]! : Colors.grey[200]!,
         ),
-        items: districts.map((district) {
-          return DropdownMenuItem(
-            value: district,
-            child: Text(district.name),
-          );
-        }).toList(),
-        onChanged: onChanged,
+        borderRadius: BorderRadius.circular(12),
+        color: enabled ? null : Colors.grey[50],
+      ),
+      child: IgnorePointer(
+        ignoring: !enabled,
+        child: Opacity(
+          opacity: enabled ? 1.0 : 0.5,
+          child: DropdownButtonFormField<District>(
+            key: ValueKey(
+                'district_${districts.length}_${validSelectedDistrict?.id}'),
+            value: validSelectedDistrict,
+            decoration: InputDecoration(
+              labelText: 'District',
+              prefixIcon: Icon(
+                Icons.map,
+                color: enabled
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey[400],
+              ),
+              border: InputBorder.none,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            items: districts.map((district) {
+              return DropdownMenuItem(
+                value: district,
+                child: Text(district.name),
+              );
+            }).toList(),
+            onChanged: enabled ? onChanged : null,
+          ),
+        ),
       ),
     );
   }
@@ -742,35 +1094,50 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab> {
   Widget _buildAreaDropdown({
     required List<Area> areas,
     required Function(Area?) onChanged,
+    bool enabled = true,
   }) {
     // Validate that selected area is in the list
-    final validSelectedArea = _selectedArea != null && 
-        areas.any((a) => a.id == _selectedArea!.id)
+    final validSelectedArea = _selectedArea != null &&
+            areas.any((a) => a.id == _selectedArea!.id)
         ? _selectedArea
         : null;
-    
+
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButtonFormField<Area>(
-        key: ValueKey('area_${areas.length}_${validSelectedArea?.id}'),
-        value: validSelectedArea,
-        decoration: InputDecoration(
-          labelText: 'Area',
-          prefixIcon: Icon(Icons.location_on,
-              color: Theme.of(context).colorScheme.primary),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        border: Border.all(
+          color: enabled ? Colors.grey[300]! : Colors.grey[200]!,
         ),
-        items: areas.map((area) {
-          return DropdownMenuItem(
-            value: area,
-            child: Text(area.name),
-          );
-        }).toList(),
-        onChanged: onChanged,
+        borderRadius: BorderRadius.circular(12),
+        color: enabled ? null : Colors.grey[50],
+      ),
+      child: IgnorePointer(
+        ignoring: !enabled,
+        child: Opacity(
+          opacity: enabled ? 1.0 : 0.5,
+          child: DropdownButtonFormField<Area>(
+            key: ValueKey('area_${areas.length}_${validSelectedArea?.id}'),
+            value: validSelectedArea,
+            decoration: InputDecoration(
+              labelText: 'Area',
+              prefixIcon: Icon(
+                Icons.location_on,
+                color: enabled
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.grey[400],
+              ),
+              border: InputBorder.none,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            items: areas.map((area) {
+              return DropdownMenuItem(
+                value: area,
+                child: Text(area.name),
+              );
+            }).toList(),
+            onChanged: enabled ? onChanged : null,
+          ),
+        ),
       ),
     );
   }

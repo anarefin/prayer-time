@@ -3,6 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Service for managing local storage operations
 class LocalStorageService {
   static const String _favoritesKey = 'favorite_mosques';
+  static const String _locationPreferenceDivisionKey = 'location_preference_division';
+  static const String _locationPreferenceDistrictKey = 'location_preference_district';
+  static const String _locationPreferenceAreaKey = 'location_preference_area';
 
   /// Get favorite mosque IDs from local storage
   Future<List<String>> getFavorites() async {
@@ -76,6 +79,71 @@ class LocalStorageService {
       print('Error clearing favorites: $e');
       return false;
     }
+  }
+
+  // ==================== LOCATION PREFERENCES ====================
+
+  /// Save location preference to local storage
+  Future<bool> saveLocationPreference({
+    required String divisionName,
+    required String districtId,
+    required String areaId,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_locationPreferenceDivisionKey, divisionName);
+      await prefs.setString(_locationPreferenceDistrictKey, districtId);
+      await prefs.setString(_locationPreferenceAreaKey, areaId);
+      return true;
+    } catch (e) {
+      print('Error saving location preference: $e');
+      return false;
+    }
+  }
+
+  /// Get location preference from local storage
+  /// Returns a Map with 'division', 'districtId', and 'areaId' keys
+  /// Returns null if no preference is saved
+  Future<Map<String, String>?> getLocationPreference() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final division = prefs.getString(_locationPreferenceDivisionKey);
+      final districtId = prefs.getString(_locationPreferenceDistrictKey);
+      final areaId = prefs.getString(_locationPreferenceAreaKey);
+
+      // Only return if all values exist
+      if (division != null && districtId != null && areaId != null) {
+        return {
+          'division': division,
+          'districtId': districtId,
+          'areaId': areaId,
+        };
+      }
+      return null;
+    } catch (e) {
+      print('Error getting location preference: $e');
+      return null;
+    }
+  }
+
+  /// Clear location preference
+  Future<bool> clearLocationPreference() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_locationPreferenceDivisionKey);
+      await prefs.remove(_locationPreferenceDistrictKey);
+      await prefs.remove(_locationPreferenceAreaKey);
+      return true;
+    } catch (e) {
+      print('Error clearing location preference: $e');
+      return false;
+    }
+  }
+
+  /// Check if location preference exists
+  Future<bool> hasLocationPreference() async {
+    final preference = await getLocationPreference();
+    return preference != null;
   }
 }
 
