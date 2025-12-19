@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
@@ -57,7 +58,7 @@ class AuthService {
         } catch (firestoreError) {
           // Log the error but don't fail registration
           // User is created in Firebase Auth, Firestore can be synced later
-          print('Firestore error during registration: $firestoreError');
+          debugPrint('Firestore error during registration: $firestoreError');
         }
 
         return userModel;
@@ -94,10 +95,10 @@ class AuthService {
 
           if (userDoc.exists) {
             final data = userDoc.data();
-            print('✅ User document found: $data');
+            debugPrint('✅ User document found: $data');
             
             if (data == null) {
-              print('⚠️ User document exists but data is null, creating default user');
+              debugPrint('⚠️ User document exists but data is null, creating default user');
               final userModel = UserModel(
                 uid: userCredential.user!.uid,
                 email: email,
@@ -113,11 +114,11 @@ class AuthService {
             
             try {
               final userModel = UserModel.fromJson(data, userDoc.id);
-              print('✅ UserModel parsed successfully: $userModel');
+              debugPrint('✅ UserModel parsed successfully: $userModel');
               return userModel;
             } catch (parseError) {
-              print('❌ Error parsing UserModel: $parseError');
-              print('📄 Raw data: $data');
+              debugPrint('❌ Error parsing UserModel: $parseError');
+              debugPrint('📄 Raw data: $data');
               // Return a default user model if parsing fails
               return UserModel(
                 uid: userCredential.user!.uid,
@@ -128,7 +129,7 @@ class AuthService {
             }
           } else {
             // User document doesn't exist, create it
-            print('⚠️ User document not found, creating new one');
+            debugPrint('⚠️ User document not found, creating new one');
             final userModel = UserModel(
               uid: userCredential.user!.uid,
               email: email,
@@ -141,13 +142,13 @@ class AuthService {
                 .doc(userCredential.user!.uid)
                 .set(userModel.toJson());
 
-            print('✅ New user document created');
+            debugPrint('✅ New user document created');
             return userModel;
           }
         } catch (firestoreError) {
           // If Firestore fails, still return a user model
           // This ensures authentication works even if Firestore has issues
-          print('❌ Firestore error: $firestoreError');
+          debugPrint('❌ Firestore error: $firestoreError');
           return UserModel(
             uid: userCredential.user!.uid,
             email: email,
@@ -194,7 +195,7 @@ class AuthService {
           try {
             await _firestore.collection('users').doc(uid).set(userModel.toJson());
           } catch (e) {
-            print('Error creating user document: $e');
+            debugPrint('Error creating user document: $e');
           }
           
           return userModel;
@@ -202,7 +203,7 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print('Error getting user data: $e');
+      debugPrint('Error getting user data: $e');
       // Return null instead of throwing to prevent app crashes
       return null;
     }

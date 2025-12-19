@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Model representing a user with role-based access
 class UserModel {
   final String uid;
@@ -27,7 +29,7 @@ class UserModel {
         }
       }
     } catch (e) {
-      print('Warning: Could not parse favorites list: $e');
+      debugPrint('Warning: Could not parse favorites list: $e');
       parsedFavorites = [];
     }
 

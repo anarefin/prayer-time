@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/district.dart';
@@ -13,7 +14,7 @@ class DistrictSeedingService {
       final snapshot = await _firestore.collection('districts').limit(1).get();
       return snapshot.docs.isNotEmpty;
     } catch (e) {
-      print('Error checking districts seeded status: $e');
+      debugPrint('Error checking districts seeded status: $e');
       return false;
     }
   }
@@ -24,11 +25,11 @@ class DistrictSeedingService {
       // Check if already seeded
       final alreadySeeded = await isDistrictsSeeded();
       if (alreadySeeded) {
-        print('Districts already seeded, skipping...');
+        debugPrint('Districts already seeded, skipping...');
         return;
       }
 
-      print('Loading Bangladesh districts data...');
+      debugPrint('Loading Bangladesh districts data...');
 
       // Load JSON file
       final String jsonString =
@@ -37,7 +38,7 @@ class DistrictSeedingService {
 
       final List<dynamic> divisions = data['divisions'] as List<dynamic>;
 
-      print('Seeding ${divisions.length} divisions...');
+      debugPrint('Seeding ${divisions.length} divisions...');
 
       // Use batch write for better performance
       WriteBatch batch = _firestore.batch();
@@ -68,7 +69,7 @@ class DistrictSeedingService {
             await batch.commit();
             batch = _firestore.batch();
             batchCount = 0;
-            print('Committed batch, $totalDistricts districts seeded so far...');
+            debugPrint('Committed batch, $totalDistricts districts seeded so far...');
           }
         }
       }
@@ -78,10 +79,10 @@ class DistrictSeedingService {
         await batch.commit();
       }
 
-      print(
+      debugPrint(
           'Successfully seeded $totalDistricts districts from ${divisions.length} divisions!');
     } catch (e) {
-      print('Error seeding districts: $e');
+      debugPrint('Error seeding districts: $e');
       rethrow;
     }
   }
@@ -89,7 +90,7 @@ class DistrictSeedingService {
   /// Force re-seed (delete all existing districts and re-seed)
   Future<void> forceReseed() async {
     try {
-      print('Force re-seeding districts...');
+      debugPrint('Force re-seeding districts...');
 
       // Delete all existing districts
       final snapshot = await _firestore.collection('districts').get();
@@ -110,12 +111,12 @@ class DistrictSeedingService {
         await batch.commit();
       }
 
-      print('Deleted existing districts, now seeding...');
+      debugPrint('Deleted existing districts, now seeding...');
 
       // Re-seed
       await seedDistricts();
     } catch (e) {
-      print('Error force re-seeding districts: $e');
+      debugPrint('Error force re-seeding districts: $e');
       rethrow;
     }
   }

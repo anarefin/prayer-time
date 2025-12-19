@@ -1,0 +1,10 @@
+build/
+.dart_tool/
+.idea/
+node_modules/
+database-management/node_modules/
+*.iml
+.gradle/
+android/.gradle/
+ios/Pods/
+

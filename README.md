@@ -90,8 +90,8 @@ lib/
 - Physical device or emulator for testing
 
 ### Quick Start
-1. See [QUICKSTART.md](QUICKSTART.md) for a 10-minute setup guide
-2. See [FIREBASE_SETUP.md](FIREBASE_SETUP.md) for detailed Firebase configuration
+1. See [QUICKSTART.md](markdowns/QUICKSTART.md) for a 10-minute setup guide
+2. See [FIREBASE_SETUP.md](markdowns/FIREBASE_SETUP.md) for detailed Firebase configuration
 
 ### Installation Steps
 
@@ -107,7 +107,7 @@ flutter pub get
 ```
 
 3. **Configure Firebase**
-   - Follow [FIREBASE_SETUP.md](FIREBASE_SETUP.md)
+   - Follow [FIREBASE_SETUP.md](markdowns/FIREBASE_SETUP.md)
    - Add `google-services.json` to `android/app/`
    - Add `GoogleService-Info.plist` to `ios/Runner/`
 
@@ -178,7 +178,7 @@ To create an admin user:
 
 ## 🧪 Testing
 
-See [TESTING_GUIDE.md](TESTING_GUIDE.md) for comprehensive testing scenarios including:
+See [TESTING_GUIDE.md](markdowns/TESTING_GUIDE.md) for comprehensive testing scenarios including:
 - Admin workflows
 - User workflows
 - Edge cases
@@ -186,7 +186,7 @@ See [TESTING_GUIDE.md](TESTING_GUIDE.md) for comprehensive testing scenarios inc
 
 ## 📦 Deployment
 
-See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for:
+See [DEPLOYMENT_CHECKLIST.md](markdowns/DEPLOYMENT_CHECKLIST.md) for:
 - Android build configuration
 - iOS build configuration
 - App store submission requirements
@@ -229,10 +229,14 @@ For issues and questions:
 
 ## 📚 Additional Documentation
 
-- [FIREBASE_SETUP.md](FIREBASE_SETUP.md) - Firebase configuration guide
-- [QUICKSTART.md](QUICKSTART.md) - Quick setup in 10 minutes
-- [TESTING_GUIDE.md](TESTING_GUIDE.md) - Testing scenarios and procedures
-- [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) - Deployment guide
+All documentation files are located in the `markdowns/` directory:
+
+- [FIREBASE_SETUP.md](markdowns/FIREBASE_SETUP.md) - Firebase configuration guide
+- [QUICKSTART.md](markdowns/QUICKSTART.md) - Quick setup in 10 minutes
+- [TESTING_GUIDE.md](markdowns/TESTING_GUIDE.md) - Testing scenarios and procedures
+- [DEPLOYMENT_CHECKLIST.md](markdowns/DEPLOYMENT_CHECKLIST.md) - Deployment guide
+
+For database management scripts, see the `database-management/` directory.
 
 ## 🌟 Acknowledgments
 

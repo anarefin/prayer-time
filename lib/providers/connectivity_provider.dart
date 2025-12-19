@@ -52,11 +52,11 @@ class ConnectivityProvider extends ChangeNotifier {
       // Just disconnected
       _lastDisconnectTime = DateTime.now();
       _wasDisconnected = true;
-      print('📡 Device went offline');
+      debugPrint('📡 Device went offline');
     } else if (!previousState && isConnected) {
       // Just reconnected
       _lastConnectTime = DateTime.now();
-      print('📡 Device came back online');
+      debugPrint('📡 Device came back online');
       
       // Clear reconnection flag after 5 seconds
       Future.delayed(const Duration(seconds: 5), () {

@@ -419,7 +419,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         }
       }
     } catch (e) {
-      print('Login error caught: $e');
+      debugPrint('Login error caught: $e');
       
       // Wait for auth state to update
       await Future.delayed(const Duration(milliseconds: 500));
@@ -431,7 +431,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       if (mounted) {
         // Check if user is logged in despite the error
         if (authProvider.isLoggedIn) {
-          print('User is logged in despite error');
+          debugPrint('User is logged in despite error');
           // Check if user is admin
           if (authProvider.isAdmin) {
             // Success! Reset attempt count

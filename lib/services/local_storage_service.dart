@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service for managing local storage operations
@@ -14,7 +15,7 @@ class LocalStorageService {
       final favorites = prefs.getStringList(_favoritesKey) ?? [];
       return favorites;
     } catch (e) {
-      print('Error loading favorites from local storage: $e');
+      debugPrint('Error loading favorites from local storage: $e');
       return [];
     }
   }
@@ -26,7 +27,7 @@ class LocalStorageService {
       await prefs.setStringList(_favoritesKey, mosqueIds);
       return true;
     } catch (e) {
-      print('Error saving favorites to local storage: $e');
+      debugPrint('Error saving favorites to local storage: $e');
       return false;
     }
   }
@@ -41,7 +42,7 @@ class LocalStorageService {
       }
       return true;
     } catch (e) {
-      print('Error adding favorite to local storage: $e');
+      debugPrint('Error adding favorite to local storage: $e');
       return false;
     }
   }
@@ -53,7 +54,7 @@ class LocalStorageService {
       favorites.remove(mosqueId);
       return await saveFavorites(favorites);
     } catch (e) {
-      print('Error removing favorite from local storage: $e');
+      debugPrint('Error removing favorite from local storage: $e');
       return false;
     }
   }
@@ -64,7 +65,7 @@ class LocalStorageService {
       final favorites = await getFavorites();
       return favorites.contains(mosqueId);
     } catch (e) {
-      print('Error checking favorite status: $e');
+      debugPrint('Error checking favorite status: $e');
       return false;
     }
   }
@@ -76,7 +77,7 @@ class LocalStorageService {
       await prefs.remove(_favoritesKey);
       return true;
     } catch (e) {
-      print('Error clearing favorites: $e');
+      debugPrint('Error clearing favorites: $e');
       return false;
     }
   }
@@ -96,7 +97,7 @@ class LocalStorageService {
       await prefs.setString(_locationPreferenceAreaKey, areaId);
       return true;
     } catch (e) {
-      print('Error saving location preference: $e');
+      debugPrint('Error saving location preference: $e');
       return false;
     }
   }
@@ -121,7 +122,7 @@ class LocalStorageService {
       }
       return null;
     } catch (e) {
-      print('Error getting location preference: $e');
+      debugPrint('Error getting location preference: $e');
       return null;
     }
   }
@@ -135,7 +136,7 @@ class LocalStorageService {
       await prefs.remove(_locationPreferenceAreaKey);
       return true;
     } catch (e) {
-      print('Error clearing location preference: $e');
+      debugPrint('Error clearing location preference: $e');
       return false;
     }
   }

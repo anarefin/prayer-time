@@ -178,7 +178,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
     
     // If was offline and now online, refresh districts
     if (_wasOffline && connectivityProvider.isConnected) {
-      print('📡 Connectivity restored - refreshing districts');
+      debugPrint('📡 Connectivity restored - refreshing districts');
       _wasOffline = false;
       
       // Reset selections to avoid stale references
@@ -233,7 +233,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
         }
       }
     } catch (e) {
-      print('Error loading saved preference: $e');
+      debugPrint('Error loading saved preference: $e');
     }
 
     return false;

@@ -24,12 +24,12 @@ class AuthProvider with ChangeNotifier {
     _authService.authStateChanges.listen((User? firebaseUser) async {
       try {
         if (firebaseUser != null) {
-          print('🔔 Auth state changed: User logged in (${firebaseUser.uid})');
+          debugPrint('🔔 Auth state changed: User logged in (${firebaseUser.uid})');
           // User is logged in, fetch user data
           _currentUser = await _authService.getUserData(firebaseUser.uid);
           // If getUserData returns null, create a default user model
           if (_currentUser == null) {
-            print('⚠️ getUserData returned null, creating default user model');
+            debugPrint('⚠️ getUserData returned null, creating default user model');
             _currentUser = UserModel(
               uid: firebaseUser.uid,
               email: firebaseUser.email ?? '',
@@ -37,7 +37,7 @@ class AuthProvider with ChangeNotifier {
               favorites: [],
             );
           } else {
-            print('✅ User data loaded successfully: $_currentUser');
+            debugPrint('✅ User data loaded successfully: $_currentUser');
           }
           
           // Set up real-time user data listener to sync favorites and other data
@@ -46,20 +46,20 @@ class AuthProvider with ChangeNotifier {
           notifyListeners();
         } else {
           // User is logged out
-          print('🔔 Auth state changed: User logged out');
+          debugPrint('🔔 Auth state changed: User logged out');
           _cancelUserDataListener();
           _currentUser = null;
           notifyListeners();
         }
       } catch (e, stackTrace) {
-        print('❌ Error in auth state listener: $e');
-        print('Stack trace: $stackTrace');
+        debugPrint('❌ Error in auth state listener: $e');
+        debugPrint('Stack trace: $stackTrace');
         _errorMessage = 'Auth error: ${e.toString()}';
         _currentUser = null;
         notifyListeners();
       }
     }, onError: (error) {
-      print('❌ Auth state stream error: $error');
+      debugPrint('❌ Auth state stream error: $error');
       _errorMessage = 'Auth stream error: ${error.toString()}';
       _currentUser = null;
       notifyListeners();
@@ -75,13 +75,13 @@ class AuthProvider with ChangeNotifier {
     _userDataSubscription = _authService.getUserDataStream(uid).listen(
       (UserModel? userData) {
         if (userData != null) {
-          print('🔄 User data updated from Firestore: ${userData.favorites.length} favorites');
+          debugPrint('🔄 User data updated from Firestore: ${userData.favorites.length} favorites');
           _currentUser = userData;
           notifyListeners();
         }
       },
       onError: (error) {
-        print('❌ Error in user data stream: $error');
+        debugPrint('❌ Error in user data stream: $error');
       },
     );
   }

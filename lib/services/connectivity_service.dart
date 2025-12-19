@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 /// Service for monitoring internet connectivity
@@ -43,7 +44,7 @@ class ConnectivityService {
       _updateConnectivity(hasConnection);
       return hasConnection;
     } catch (e) {
-      print('Error checking connectivity: $e');
+      debugPrint('Error checking connectivity: $e');
       _updateConnectivity(false);
       return false;
     }
@@ -76,7 +77,7 @@ class ConnectivityService {
     } on TimeoutException catch (_) {
       return false;
     } catch (e) {
-      print('Error verifying internet connection: $e');
+      debugPrint('Error verifying internet connection: $e');
       return false;
     }
   }
@@ -86,7 +87,7 @@ class ConnectivityService {
     if (_isConnected != isConnected) {
       _isConnected = isConnected;
       _connectivityController?.add(_isConnected);
-      print('Connectivity changed: ${_isConnected ? "Online" : "Offline"}');
+      debugPrint('Connectivity changed: ${_isConnected ? "Online" : "Offline"}');
     }
   }
 
