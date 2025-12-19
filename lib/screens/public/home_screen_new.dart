@@ -117,7 +117,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
   final LocationService _locationService = LocationService();
   final LocalStorageService _localStorageService = LocalStorageService();
   bool _wasOffline = false;
-  bool _isInitialized = false;
+  bool _previousConnectivityState = true;
+  bool _connectivityListenerSetup = false;
 
   @override
   void initState() {
@@ -125,75 +126,84 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeLocation();
+      _setupConnectivityListener();
     });
+  }
+  
+  /// Set up connectivity listener to only respond to actual connectivity changes
+  void _setupConnectivityListener() {
+    if (!mounted || _connectivityListenerSetup) return;
+    try {
+      final connectivityProvider = context.read<ConnectivityProvider>();
+      _previousConnectivityState = connectivityProvider.isConnected;
+      
+      // Listen to connectivity changes via provider's notifyListeners
+      connectivityProvider.addListener(_onConnectivityChanged);
+      _connectivityListenerSetup = true;
+    } catch (e) {
+      debugPrint('Error setting up connectivity listener: $e');
+    }
+  }
+  
+  /// Handle connectivity changes - only called when connectivity actually changes
+  void _onConnectivityChanged() {
+    if (!mounted) return;
+    final connectivityProvider = context.read<ConnectivityProvider>();
+    final isConnected = connectivityProvider.isConnected;
+    
+    // Only respond to actual connectivity state changes
+    if (_previousConnectivityState != isConnected) {
+      _previousConnectivityState = isConnected;
+      _checkConnectivityAndRefresh();
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    // Remove connectivity listener
+    if (_connectivityListenerSetup) {
+      try {
+        context.read<ConnectivityProvider>().removeListener(_onConnectivityChanged);
+      } catch (e) {
+        // Provider might already be disposed
+      }
+    }
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
-    // When app resumes, check location again
-    if (state == AppLifecycleState.resumed && _isInitialized) {
-      _attemptLocationDetectionOnResume();
-    }
-  }
-
-  /// Attempt location detection when app resumes (e.g., after enabling location in settings)
-  Future<void> _attemptLocationDetectionOnResume() async {
-    if (!mounted) return;
-
-    final districtProvider = context.read<DistrictProvider>();
-    
-    // Check if districts are loaded
-    if (districtProvider.districts.isEmpty) {
-      await districtProvider.loadDistricts();
-    }
-
-    // Load saved preference first
-    await _loadSavedPreference();
-
-    // Always attempt location detection with dialog
-    if (_selectedArea != null) {
-      await _checkLocationUpdate();
-    } else {
-      await _attemptAutoLocation();
-    }
+    // Location detection only happens on app open, not on resume
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _checkConnectivityAndRefresh();
+    // Do NOT check connectivity here - it's called on every tab navigation
+    // Connectivity is now handled by a proper listener in initState()
   }
 
   /// Check connectivity and refresh data if coming back online
   void _checkConnectivityAndRefresh() {
-    final connectivityProvider = context.watch<ConnectivityProvider>();
+    if (!mounted) return;
+    final connectivityProvider = context.read<ConnectivityProvider>();
     
     // If was offline and now online, refresh districts
     if (_wasOffline && connectivityProvider.isConnected) {
       debugPrint('📡 Connectivity restored - refreshing districts');
       _wasOffline = false;
       
-      // Reset selections to avoid stale references
+      // Only reload districts and preferences, do NOT trigger location detection again
+      // if it has already been attempted
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          setState(() {
-            _selectedDivision = null;
-            _selectedDistrict = null;
-            _selectedArea = null;
-          });
-          
-          // Reload districts from Firestore and re-initialize
+          // Reload districts from Firestore
           context.read<DistrictProvider>().loadDistricts().then((_) {
             if (mounted) {
-              _initializeLocation();
+              // Only reload saved preferences, don't trigger location detection
+              _loadSavedPreference();
             }
           });
         }
@@ -251,10 +261,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
     // Try to load saved preference first (to populate dropdowns immediately)
     final hasSavedPreference = await _loadSavedPreference();
 
-    // Mark as initialized
-    _isInitialized = true;
-
-    // Always attempt to detect location with dialog on app open
+    // Always attempt to detect location with dialog when app opens
     if (hasSavedPreference) {
       // Has saved preference, check if location changed
       await _checkLocationUpdate();
