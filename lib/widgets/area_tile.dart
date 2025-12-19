@@ -10,13 +10,13 @@ class AreaTile extends StatelessWidget {
   final bool showActions;
 
   const AreaTile({
-    Key? key,
+    super.key,
     required this.area,
     this.onTap,
     this.onEdit,
     this.onDelete,
     this.showActions = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -7,9 +7,9 @@ class ConnectivityBanner extends StatelessWidget {
   final Widget child;
 
   const ConnectivityBanner({
-    Key? key,
+    super.key,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +52,7 @@ class ConnectivityBanner extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.cloud_off,
                   color: Colors.white,
                   size: 20,
@@ -63,7 +63,7 @@ class ConnectivityBanner extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
+                      const Text(
                         'No Internet Connection',
                         style: TextStyle(
                           color: Colors.white,
@@ -119,13 +119,13 @@ class ConnectivityBanner extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.cloud_done,
                   color: Colors.white,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
-                Expanded(
+                const Expanded(
                   child: Text(
                     'Back Online',
                     style: TextStyle(
@@ -137,8 +137,8 @@ class ConnectivityBanner extends StatelessWidget {
                 ),
                 InkWell(
                   onTap: () => provider.clearReconnectionFlag(),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
                     child: Icon(
                       Icons.close,
                       color: Colors.white,

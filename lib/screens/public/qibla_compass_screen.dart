@@ -6,7 +6,7 @@ import '../../widgets/loading_indicator.dart';
 
 /// Screen displaying Qibla compass with real-time direction
 class QiblaCompassScreen extends StatefulWidget {
-  const QiblaCompassScreen({Key? key}) : super(key: key);
+  const QiblaCompassScreen({super.key});
 
   @override
   State<QiblaCompassScreen> createState() => _QiblaCompassScreenState();

@@ -8,11 +8,11 @@ class PrayerTimeCard extends StatelessWidget {
   final bool isNext;
 
   const PrayerTimeCard({
-    Key? key,
+    super.key,
     required this.prayerName,
     required this.prayerTime,
     this.isNext = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

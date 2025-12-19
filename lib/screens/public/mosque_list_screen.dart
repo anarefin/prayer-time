@@ -14,9 +14,9 @@ class MosqueListScreen extends StatefulWidget {
   final Area area;
 
   const MosqueListScreen({
-    Key? key,
+    super.key,
     required this.area,
-  }) : super(key: key);
+  });
 
   @override
   State<MosqueListScreen> createState() => _MosqueListScreenState();

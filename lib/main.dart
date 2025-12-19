@@ -35,7 +35,7 @@ void main() async {
 }
 
 class PrayerTimeApp extends StatelessWidget {
-  const PrayerTimeApp({Key? key}) : super(key: key);
+  const PrayerTimeApp({super.key});
 
   @override
   Widget build(BuildContext context) {

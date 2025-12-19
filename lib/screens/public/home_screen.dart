@@ -7,7 +7,7 @@ import '../admin/admin_login_screen.dart';
 
 /// Home screen with district selection and bottom navigation
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -94,7 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 /// Home tab content with district selection
 class HomeTabContent extends StatelessWidget {
-  const HomeTabContent({Key? key}) : super(key: key);
+  const HomeTabContent({super.key});
 
   @override
   Widget build(BuildContext context) {

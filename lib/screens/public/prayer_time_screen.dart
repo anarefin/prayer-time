@@ -14,9 +14,9 @@ class PrayerTimeScreen extends StatefulWidget {
   final Mosque mosque;
 
   const PrayerTimeScreen({
-    Key? key,
+    super.key,
     required this.mosque,
-  }) : super(key: key);
+  });
 
   @override
   State<PrayerTimeScreen> createState() => _PrayerTimeScreenState();
@@ -255,7 +255,7 @@ class _PrayerTimeScreenState extends State<PrayerTimeScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.mosque, color: Colors.green, size: 28),
+                            const Icon(Icons.mosque, color: Colors.green, size: 28),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(

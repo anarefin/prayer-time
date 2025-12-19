@@ -12,9 +12,9 @@ class AreaSelectionScreen extends StatefulWidget {
   final District district;
 
   const AreaSelectionScreen({
-    Key? key,
+    super.key,
     required this.district,
-  }) : super(key: key);
+  });
 
   @override
   State<AreaSelectionScreen> createState() => _AreaSelectionScreenState();

@@ -7,7 +7,7 @@ import '../../widgets/empty_state.dart';
 
 /// Admin screen for managing districts
 class ManageDistrictsScreen extends StatefulWidget {
-  const ManageDistrictsScreen({Key? key}) : super(key: key);
+  const ManageDistrictsScreen({super.key});
 
   @override
   State<ManageDistrictsScreen> createState() => _ManageDistrictsScreenState();

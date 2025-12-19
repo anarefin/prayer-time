@@ -124,7 +124,7 @@ class NotificationService {
         title,
         body,
         tz.TZDateTime.from(scheduledTime, tz.local),
-        NotificationDetails(
+        const NotificationDetails(
           android: AndroidNotificationDetails(
             NotificationSettings.channelId,
             NotificationSettings.channelName,
@@ -133,7 +133,7 @@ class NotificationService {
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
           ),
-          iOS: const DarwinNotificationDetails(
+          iOS: DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,
@@ -162,7 +162,7 @@ class NotificationService {
       id,
       title,
       body,
-      NotificationDetails(
+      const NotificationDetails(
         android: AndroidNotificationDetails(
           NotificationSettings.channelId,
           NotificationSettings.channelName,
@@ -171,7 +171,7 @@ class NotificationService {
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
         ),
-        iOS: const DarwinNotificationDetails(
+        iOS: DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,

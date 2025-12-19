@@ -11,14 +11,14 @@ class MosqueCard extends StatelessWidget {
   final bool showFacilities;
 
   const MosqueCard({
-    Key? key,
+    super.key,
     required this.mosque,
     this.onTap,
     this.isFavorite = false,
     this.onFavoriteToggle,
     this.showFavoriteButton = true,
     this.showFacilities = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

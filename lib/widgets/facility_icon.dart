@@ -8,12 +8,12 @@ class FacilityIcon extends StatelessWidget {
   final bool isAvailable;
 
   const FacilityIcon({
-    Key? key,
+    super.key,
     required this.icon,
     required this.label,
     this.color,
     this.isAvailable = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

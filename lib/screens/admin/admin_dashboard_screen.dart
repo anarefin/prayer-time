@@ -10,7 +10,7 @@ import 'manage_prayer_times_screen.dart';
 
 /// Admin dashboard with statistics and navigation
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
+  const AdminDashboardScreen({super.key});
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
@@ -127,7 +127,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Row(
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
@@ -135,7 +135,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 color: Colors.white,
                                 size: 16,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text(
                                 'Admin',
                                 style: TextStyle(
@@ -309,12 +309,12 @@ class _StatCard extends StatelessWidget {
   final Color color;
 
   const _StatCard({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     required this.count,
     required this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -353,13 +353,13 @@ class _ManagementCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _ManagementCard({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     required this.description,
     required this.color,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

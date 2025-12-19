@@ -9,7 +9,7 @@ import 'prayer_time_screen.dart';
 
 /// Screen showing nearby mosques with list view
 class NearestMosqueScreen extends StatefulWidget {
-  const NearestMosqueScreen({Key? key}) : super(key: key);
+  const NearestMosqueScreen({super.key});
 
   @override
   State<NearestMosqueScreen> createState() => _NearestMosqueScreenState();

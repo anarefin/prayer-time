@@ -9,13 +9,13 @@ class EmptyState extends StatelessWidget {
   final VoidCallback? onAction;
 
   const EmptyState({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     this.message,
     this.actionLabel,
     this.onAction,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -77,10 +77,10 @@ class ErrorState extends StatelessWidget {
   final VoidCallback? onRetry;
 
   const ErrorState({
-    Key? key,
+    super.key,
     required this.message,
     this.onRetry,
-  }) : super(key: key);
+  });
 
   /// Check if error is connectivity-related
   bool get _isConnectivityError {

@@ -17,7 +17,7 @@ import '../admin/admin_login_screen.dart';
 
 /// Redesigned Home screen with dropdown selectors
 class HomeScreenNew extends StatefulWidget {
-  const HomeScreenNew({Key? key}) : super(key: key);
+  const HomeScreenNew({super.key});
 
   @override
   State<HomeScreenNew> createState() => _HomeScreenNewState();
@@ -28,7 +28,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> _screens = [
+    final List<Widget> screens = [
       const ImprovedHomeTab(),
       const FavoritesScreen(),
       const NearestMosqueScreen(),
@@ -53,7 +53,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> {
           ),
         ],
       ),
-      body: _screens[_selectedIndex],
+      body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -103,7 +103,7 @@ class _HomeScreenNewState extends State<HomeScreenNew> {
 
 /// Improved Home Tab with Dropdown Selectors
 class ImprovedHomeTab extends StatefulWidget {
-  const ImprovedHomeTab({Key? key}) : super(key: key);
+  const ImprovedHomeTab({super.key});
 
   @override
   State<ImprovedHomeTab> createState() => _ImprovedHomeTabState();
@@ -172,11 +172,6 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    // Location detection only happens on app open, not on resume
-  }
 
   @override
   void didChangeDependencies() {
@@ -723,7 +718,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                 ),
                 child: Column(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.mosque,
                       size: 60,
                       color: Colors.white,
@@ -921,9 +916,9 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(Icons.search),
                             SizedBox(width: 8),
                             Text(
@@ -1020,7 +1015,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
         child: Opacity(
           opacity: enabled ? 1.0 : 0.5,
           child: DropdownButtonFormField<String>(
-            value: value,
+            initialValue: value,
             decoration: InputDecoration(
               labelText: label,
               prefixIcon: Icon(
@@ -1072,7 +1067,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
           child: DropdownButtonFormField<District>(
             key: ValueKey(
                 'district_${districts.length}_${validSelectedDistrict?.id}'),
-            value: validSelectedDistrict,
+            initialValue: validSelectedDistrict,
             decoration: InputDecoration(
               labelText: 'District',
               prefixIcon: Icon(
@@ -1123,7 +1118,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
           opacity: enabled ? 1.0 : 0.5,
           child: DropdownButtonFormField<Area>(
             key: ValueKey('area_${areas.length}_${validSelectedArea?.id}'),
-            value: validSelectedArea,
+            initialValue: validSelectedArea,
             decoration: InputDecoration(
               labelText: 'Area',
               prefixIcon: Icon(
@@ -1180,7 +1175,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   height: 1.3,

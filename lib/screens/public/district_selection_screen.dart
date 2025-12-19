@@ -7,7 +7,7 @@ import 'area_selection_screen.dart';
 
 /// Screen for selecting a district in Bangladesh
 class DistrictSelectionScreen extends StatefulWidget {
-  const DistrictSelectionScreen({Key? key}) : super(key: key);
+  const DistrictSelectionScreen({super.key});
 
   @override
   State<DistrictSelectionScreen> createState() =>

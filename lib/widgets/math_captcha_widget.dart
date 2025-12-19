@@ -9,11 +9,11 @@ class MathCaptchaWidget extends StatefulWidget {
   final CaptchaDifficulty difficulty;
 
   const MathCaptchaWidget({
-    Key? key,
+    super.key,
     required this.captchaService,
     required this.onValidationChanged,
     this.difficulty = CaptchaDifficulty.easy,
-  }) : super(key: key);
+  });
 
   @override
   State<MathCaptchaWidget> createState() => _MathCaptchaWidgetState();
@@ -212,7 +212,7 @@ class _MathCaptchaWidgetState extends State<MathCaptchaWidget> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.check_circle,
                   color: Colors.green,
                   size: 16,
@@ -232,7 +232,7 @@ class _MathCaptchaWidgetState extends State<MathCaptchaWidget> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.error,
                   color: Colors.red,
                   size: 16,

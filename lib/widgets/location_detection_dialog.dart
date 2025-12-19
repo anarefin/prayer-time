@@ -3,7 +3,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 /// A beautiful loading dialog shown during location detection
 class LocationDetectionDialog extends StatelessWidget {
-  const LocationDetectionDialog({Key? key}) : super(key: key);
+  const LocationDetectionDialog({super.key});
 
   /// Show the location detection dialog
   static Future<bool?> show(BuildContext context) {
@@ -100,7 +100,7 @@ class LocationDetectionDialog extends StatelessWidget {
 
 /// Dialog shown when location services are disabled
 class LocationDisabledDialog extends StatelessWidget {
-  const LocationDisabledDialog({Key? key}) : super(key: key);
+  const LocationDisabledDialog({super.key});
 
   /// Show the location disabled dialog
   static Future<bool?> show(BuildContext context) {
@@ -117,15 +117,15 @@ class LocationDisabledDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      title: Row(
+      title: const Row(
         children: [
           Icon(
             Icons.location_off,
             color: Colors.orange,
             size: 28,
           ),
-          const SizedBox(width: 12),
-          const Expanded(
+          SizedBox(width: 12),
+          Expanded(
             child: Text('Location Services Disabled'),
           ),
         ],
