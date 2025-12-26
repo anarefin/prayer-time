@@ -3,9 +3,9 @@
  * 
  * This script populates Firestore with:
  * - 64 Bangladesh districts across 8 divisions
- * - Sample areas for major districts
+ * - All Upazilas (Areas) for each district
  * 
- * Usage: node seed-bangladesh-data.js
+ * usage: node seed-bangladesh-data.js
  */
 
 const admin = require('firebase-admin');
@@ -21,80 +21,30 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-// Load districts from JSON
-const districtsData = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'assets/data/bangladesh_districts.json'), 'utf8')
-);
+// Helper to load and parse specific table data from the raw JSON structure
+function loadData(filename, tableName) {
+  const filePath = path.join(__dirname, 'assets/data', filename);
+  const rawData = fs.readFileSync(filePath, 'utf8');
+  const jsonContent = JSON.parse(rawData);
 
-// Sample areas for major districts
-const sampleAreas = {
-  // Dhaka District Areas
-  'Dhaka': [
-    { name: 'Gulshan', order: 1 },
-    { name: 'Banani', order: 2 },
-    { name: 'Dhanmondi', order: 3 },
-    { name: 'Mirpur', order: 4 },
-    { name: 'Uttara', order: 5 },
-    { name: 'Mohammadpur', order: 6 },
-    { name: 'Motijheel', order: 7 },
-    { name: 'Old Dhaka', order: 8 },
-    { name: 'Tejgaon', order: 9 },
-    { name: 'Khilgaon', order: 10 }
-  ],
-  // Chittagong District Areas
-  'Chittagong': [
-    { name: 'Agrabad', order: 1 },
-    { name: 'Pahartali', order: 2 },
-    { name: 'Halishahar', order: 3 },
-    { name: 'Panchlaish', order: 4 },
-    { name: 'Khulshi', order: 5 },
-    { name: 'Nasirabad', order: 6 }
-  ],
-  // Sylhet District Areas
-  'Sylhet': [
-    { name: 'Zindabazar', order: 1 },
-    { name: 'Ambarkhana', order: 2 },
-    { name: 'Bandar Bazar', order: 3 },
-    { name: 'Upashahar', order: 4 }
-  ],
-  // Rajshahi District Areas
-  'Rajshahi': [
-    { name: 'Shaheb Bazar', order: 1 },
-    { name: 'Motihar', order: 2 },
-    { name: 'Kazla', order: 3 },
-    { name: 'Boalia', order: 4 }
-  ],
-  // Khulna District Areas
-  'Khulna': [
-    { name: 'Shibbari', order: 1 },
-    { name: 'Khalishpur', order: 2 },
-    { name: 'Sonadanga', order: 3 },
-    { name: 'Daulatpur', order: 4 }
-  ],
-  // Barishal District Areas
-  'Barishal': [
-    { name: 'Nathullabad', order: 1 },
-    { name: 'Kawnia', order: 2 },
-    { name: 'Kalijira', order: 3 }
-  ],
-  // Rangpur District Areas
-  'Rangpur': [
-    { name: 'Dhap', order: 1 },
-    { name: 'Tajhat', order: 2 },
-    { name: 'Mahiganj', order: 3 }
-  ],
-  // Mymensingh District Areas
-  'Mymensingh': [
-    { name: 'Charpara', order: 1 },
-    { name: 'Akua', order: 2 },
-    { name: 'Mashkanda', order: 3 }
-  ]
-};
+  // Find the table data
+  const table = jsonContent.find(item => item.type === 'table' && item.name === tableName);
+  if (!table || !table.data) {
+    throw new Error(`Could not find table '${tableName}' in ${filename}`);
+  }
+  return table.data;
+}
+
+// Load data
+const divisionsData = loadData('divisions.json', 'divisions');
+const districtsData = loadData('districts.json', 'districts');
+const upazilasData = loadData('upazilas.json', 'upazilas');
 
 async function seedDistricts() {
   console.log('🌍 Starting to seed Bangladesh districts...\n');
-  
-  const districtIds = {};
+
+  // Map legacy ID to new Firestore ID
+  const districtIdMap = {};
   let totalDistricts = 0;
 
   try {
@@ -103,42 +53,52 @@ async function seedDistricts() {
     if (!existingDistricts.empty) {
       console.log('⚠️  Districts already exist. Skipping district seeding...');
       console.log('   To re-seed, delete the districts collection first.\n');
-      
-      // Get existing district IDs for area seeding
-      const allDistricts = await db.collection('districts').get();
-      allDistricts.forEach(doc => {
-        const data = doc.data();
-        districtIds[data.name] = doc.id;
-      });
-      
-      return districtIds;
+
+      // If we are skipping, we still need the map for areas
+      // However, since we might have generated random IDs, we can't easily map back 
+      // from the external JSON IDs unless we stored them. 
+      // For this task, we assume we are seeding fresh or replacing. 
+      // If data exists, we will TRY to match by name, but it's safer to recommend clearing.
+      console.log('⚠️  Cannot safely map existing districts to source data for area seeding.');
+      console.log('⚠️  Please delete existing \'districts\' and \'areas\' collections to ensure integrity.');
+      return null;
     }
 
-    // Seed districts
     const batch = db.batch();
     let batchCount = 0;
 
-    for (const division of districtsData.divisions) {
-      console.log(`📍 Seeding ${division.name} Division...`);
-      
-      for (const district of division.districts) {
-        const docRef = db.collection('districts').doc();
-        batch.set(docRef, {
-          name: district.name,
-          divisionName: division.name,
-          order: district.order
-        });
-        
-        districtIds[district.name] = docRef.id;
-        totalDistricts++;
-        batchCount++;
+    // Create a lookup for division names
+    const divisionMap = {};
+    divisionsData.forEach(div => {
+      divisionMap[div.id] = div.name;
+    });
 
-        // Firestore batch limit is 500
-        if (batchCount >= 500) {
-          await batch.commit();
-          console.log(`   ✓ Committed batch (${totalDistricts} districts so far)`);
-          batchCount = 0;
-        }
+    for (const district of districtsData) {
+      const docRef = db.collection('districts').doc();
+
+      const districtPayload = {
+        name: district.name,
+        bnName: district.bn_name,
+        divisionName: divisionMap[district.division_id] || 'Unknown',
+        divisionId: district.division_id, // Store source ID for reference
+        lat: district.lat,
+        lon: district.lon,
+        url: district.url,
+        order: parseInt(district.id) // Use source ID as order or simple sort key
+      };
+
+      batch.set(docRef, districtPayload);
+
+      // Map the source ID (e.g., "1") to the new Firestore ID
+      districtIdMap[district.id] = docRef.id;
+
+      totalDistricts++;
+      batchCount++;
+
+      if (batchCount >= 500) {
+        await batch.commit();
+        console.log(`   ✓ Committed batch (${totalDistricts} districts so far)`);
+        batchCount = 0;
       }
     }
 
@@ -147,7 +107,7 @@ async function seedDistricts() {
     }
 
     console.log(`\n✅ Successfully seeded ${totalDistricts} districts!\n`);
-    return districtIds;
+    return districtIdMap;
 
   } catch (error) {
     console.error('❌ Error seeding districts:', error);
@@ -155,49 +115,52 @@ async function seedDistricts() {
   }
 }
 
-async function seedAreas(districtIds) {
-  console.log('🏘️  Starting to seed sample areas...\n');
-  
+async function seedAreas(districtIdMap) {
+  if (!districtIdMap) return;
+
+  console.log('🏘️  Starting to seed areas (Upazilas)...\n');
+
   let totalAreas = 0;
 
   try {
-    // Check if areas already exist
     const existingAreas = await db.collection('areas').limit(1).get();
     if (!existingAreas.empty) {
       console.log('⚠️  Areas already exist. Skipping area seeding...');
-      console.log('   To re-seed, delete the areas collection first.\n');
       return;
     }
 
-    const batch = db.batch();
+    // We will batch process upazilas
+    // Firestore batch limit is 500 operations
+    const BATCH_SIZE = 500;
+    let batch = db.batch();
     let batchCount = 0;
 
-    for (const [districtName, areas] of Object.entries(sampleAreas)) {
-      const districtId = districtIds[districtName];
-      
-      if (!districtId) {
-        console.log(`⚠️  District not found: ${districtName}, skipping areas`);
+    for (const upazila of upazilasData) {
+      const firestoreDistrictId = districtIdMap[upazila.district_id];
+
+      if (!firestoreDistrictId) {
+        console.warn(`   ⚠️  Skipping upazila ${upazila.name}: District ID ${upazila.district_id} not found in map.`);
         continue;
       }
 
-      console.log(`📍 Seeding areas for ${districtName}...`);
+      const docRef = db.collection('areas').doc();
 
-      for (const area of areas) {
-        const docRef = db.collection('areas').doc();
-        batch.set(docRef, {
-          name: area.name,
-          districtId: districtId,
-          order: area.order
-        });
-        
-        totalAreas++;
-        batchCount++;
+      batch.set(docRef, {
+        name: upazila.name,
+        bnName: upazila.bn_name,
+        districtId: firestoreDistrictId,
+        url: upazila.url,
+        order: parseInt(upazila.id)
+      });
 
-        if (batchCount >= 500) {
-          await batch.commit();
-          console.log(`   ✓ Committed batch (${totalAreas} areas so far)`);
-          batchCount = 0;
-        }
+      totalAreas++;
+      batchCount++;
+
+      if (batchCount >= BATCH_SIZE) {
+        await batch.commit();
+        console.log(`   ✓ Committed batch (${totalAreas} areas so far)`);
+        batch = db.batch();
+        batchCount = 0;
       }
     }
 
@@ -214,26 +177,22 @@ async function seedAreas(districtIds) {
 }
 
 async function main() {
-  console.log('🚀 Bangladesh Data Seeding Script\n');
-  console.log('=' .repeat(50));
+  console.log('🚀 Bangladesh Data Seeding Script (Full Data)\n');
+  console.log('='.repeat(50));
   console.log('\n');
 
   try {
-    // Seed districts first
-    const districtIds = await seedDistricts();
-    
-    // Seed sample areas
-    await seedAreas(districtIds);
+    // Seed districts and get id map
+    const districtIdMap = await seedDistricts();
 
-    console.log('=' .repeat(50));
-    console.log('\n✨ All data seeded successfully!\n');
-    console.log('📊 Summary:');
-    console.log('   - 64 Bangladesh districts (8 divisions)');
-    console.log('   - Sample areas for major cities');
-    console.log('\n💡 Next steps:');
-    console.log('   1. Deploy Firestore rules: firebase deploy --only firestore:rules');
-    console.log('   2. Verify data in Firebase Console');
-    console.log('   3. Add more areas as needed through admin panel');
+    // Seed areas if districts were seeded successfully
+    if (districtIdMap) {
+      await seedAreas(districtIdMap);
+    }
+
+    console.log('='.repeat(50));
+    console.log('\n✨ Data seeding process completed.\n');
+    console.log('💡 Note: If you see "Skipping..." messages, clear your Firestore "districts" and "areas" collections and run this script again.');
     console.log('\n');
 
   } catch (error) {
@@ -246,4 +205,3 @@ async function main() {
 
 // Run the script
 main();
-
