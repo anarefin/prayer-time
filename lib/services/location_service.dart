@@ -19,6 +19,7 @@ class LocationService {
       throw 'No internet connection. Please check your network to open maps.';
     }
   }
+
   /// Check if location services are enabled
   Future<bool> isLocationServiceEnabled() async {
     return await Geolocator.isLocationServiceEnabled();
@@ -44,7 +45,7 @@ class LocationService {
 
     // Check and request permission
     var permission = await checkLocationPermission();
-    
+
     if (permission == PermissionStatus.denied) {
       permission = await requestLocationPermission();
     }
@@ -108,7 +109,8 @@ class LocationService {
 
     // Calculate bearing
     final y = math.sin(dLng) * math.cos(lat2);
-    final x = math.cos(lat1) * math.sin(lat2) -
+    final x =
+        math.cos(lat1) * math.sin(lat2) -
         math.sin(lat1) * math.cos(lat2) * math.cos(dLng);
 
     var bearing = math.atan2(y, x);
@@ -139,7 +141,7 @@ class LocationService {
     double endLng,
   ) {
     final distance = calculateDistance(startLat, startLng, endLat, endLng);
-    
+
     if (distance < 1) {
       return '${(distance * 1000).toStringAsFixed(0)} m';
     } else {
@@ -159,17 +161,7 @@ class LocationService {
 
   /// Get cardinal direction from bearing (N, NE, E, SE, S, SW, W, NW)
   String getCardinalDirection(double bearing) {
-    const directions = [
-      'N',
-      'NE',
-      'E',
-      'SE',
-      'S',
-      'SW',
-      'W',
-      'NW',
-      'N'
-    ];
+    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N'];
     final index = ((bearing + 22.5) / 45).floor() % 8;
     return directions[index];
   }
@@ -201,11 +193,18 @@ class LocationService {
   Future<List<Mosque>> getMosquesWithinRadius(double radiusKm) async {
     try {
       final position = await getCurrentPosition();
-      return await _firestoreService.getMosquesNearby(
+      final mosques = await _firestoreService.getMosquesNearby(
         position.latitude,
         position.longitude,
         radiusKm,
       );
+
+      // Limit to 10 mosques
+      if (mosques.length > 10) {
+        return mosques.take(10).toList();
+      }
+
+      return mosques;
     } catch (e) {
       throw 'Failed to get nearby mosques: $e';
     }
@@ -217,32 +216,37 @@ class LocationService {
   }
 
   /// Open Google Maps navigation to a mosque
-  Future<void> openNavigation(double destinationLat, double destinationLng) async {
+  Future<void> openNavigation(
+    double destinationLat,
+    double destinationLng,
+  ) async {
     // Check connectivity first
     await _checkConnectivity();
-    
+
     // Try native Google Maps app first (better UX)
-    final nativeUrl = 'comgooglemaps://?daddr=$destinationLat,$destinationLng&directionsmode=driving';
+    final nativeUrl =
+        'comgooglemaps://?daddr=$destinationLat,$destinationLng&directionsmode=driving';
     final nativeUri = Uri.parse(nativeUrl);
-    
+
     if (await canLaunchUrl(nativeUri)) {
       await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
       return;
     }
-    
+
     // Fallback to Apple Maps on iOS or generic geo intent on Android
-    final geoUrl = 'geo:$destinationLat,$destinationLng?q=$destinationLat,$destinationLng';
+    final geoUrl =
+        'geo:$destinationLat,$destinationLng?q=$destinationLat,$destinationLng';
     final geoUri = Uri.parse(geoUrl);
-    
+
     if (await canLaunchUrl(geoUri)) {
       await launchUrl(geoUri, mode: LaunchMode.externalApplication);
       return;
     }
-    
+
     // Final fallback to web-based Google Maps
     final webUrl = getDirectionsUrl(destinationLat, destinationLng);
     final webUri = Uri.parse(webUrl);
-    
+
     if (await canLaunchUrl(webUri)) {
       await launchUrl(webUri, mode: LaunchMode.externalApplication);
     } else {
@@ -257,32 +261,34 @@ class LocationService {
     double userLng,
   ) async {
     if (mosques.isEmpty) return;
-    
+
     // Check connectivity first
     await _checkConnectivity();
-    
+
     // Try native Google Maps app first
-    final nativeUrl = 'comgooglemaps://?center=$userLat,$userLng&q=mosque&zoom=15';
+    final nativeUrl =
+        'comgooglemaps://?center=$userLat,$userLng&q=mosque&zoom=15';
     final nativeUri = Uri.parse(nativeUrl);
-    
+
     if (await canLaunchUrl(nativeUri)) {
       await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
       return;
     }
-    
+
     // Fallback to geo search
     final geoUrl = 'geo:$userLat,$userLng?q=mosque&z=15';
     final geoUri = Uri.parse(geoUrl);
-    
+
     if (await canLaunchUrl(geoUri)) {
       await launchUrl(geoUri, mode: LaunchMode.externalApplication);
       return;
     }
-    
+
     // Final fallback to web-based Google Maps
-    final webUrl = 'https://www.google.com/maps/search/mosque/@$userLat,$userLng,15z';
+    final webUrl =
+        'https://www.google.com/maps/search/mosque/@$userLat,$userLng,15z';
     final webUri = Uri.parse(webUrl);
-    
+
     if (await canLaunchUrl(webUri)) {
       await launchUrl(webUri, mode: LaunchMode.externalApplication);
     } else {
@@ -320,4 +326,3 @@ class LocationService {
     }
   }
 }
-

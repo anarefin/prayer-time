@@ -13,7 +13,7 @@ import '../../widgets/empty_state.dart';
 
 /// Screen for managing prayer times
 class ManagePrayerTimesScreen extends StatefulWidget {
-  const ManagePrayerTimesScreen({Key? key}) : super(key: key);
+  const ManagePrayerTimesScreen({super.key});
 
   @override
   State<ManagePrayerTimesScreen> createState() =>
@@ -93,7 +93,7 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
                       }
 
                       return DropdownButtonFormField<String>(
-                        value: _selectedDivision,
+                        initialValue: _selectedDivision,
                         decoration: const InputDecoration(
                           labelText: 'Division',
                           prefixIcon: Icon(Icons.map),
@@ -127,7 +127,7 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
                             districtsByDivision[_selectedDivision] ?? [];
 
                         return DropdownButtonFormField<District>(
-                          value: _selectedDistrict,
+                          initialValue: _selectedDistrict,
                           decoration: const InputDecoration(
                             labelText: 'District',
                             prefixIcon: Icon(Icons.location_city),
@@ -169,7 +169,7 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
                         }
 
                         return DropdownButtonFormField<Area>(
-                          value: _selectedArea,
+                          initialValue: _selectedArea,
                           decoration: const InputDecoration(
                             labelText: 'Area',
                             prefixIcon: Icon(Icons.place),
@@ -205,7 +205,7 @@ class _ManagePrayerTimesScreenState extends State<ManagePrayerTimesScreen> {
                         }
 
                         return DropdownButtonFormField<Mosque>(
-                          value: _selectedMosque,
+                          initialValue: _selectedMosque,
                           decoration: const InputDecoration(
                             labelText: 'Mosque',
                             prefixIcon: Icon(Icons.mosque),
@@ -456,11 +456,11 @@ class _SetPrayerTimesDialog extends StatefulWidget {
   final PrayerTime? existingPrayerTime;
 
   const _SetPrayerTimesDialog({
-    Key? key,
+    super.key,
     required this.mosque,
     required this.date,
     this.existingPrayerTime,
-  }) : super(key: key);
+  });
 
   @override
   State<_SetPrayerTimesDialog> createState() => _SetPrayerTimesDialogState();

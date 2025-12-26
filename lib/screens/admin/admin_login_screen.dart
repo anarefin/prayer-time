@@ -9,7 +9,7 @@ import 'admin_dashboard_screen.dart';
 
 /// Admin login screen with role verification
 class AdminLoginScreen extends StatefulWidget {
-  const AdminLoginScreen({Key? key}) : super(key: key);
+  const AdminLoginScreen({super.key});
 
   @override
   State<AdminLoginScreen> createState() => _AdminLoginScreenState();
@@ -83,7 +83,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     if (_attemptCount >= _maxAttempts) {
       setState(() {
         _lockoutTime = DateTime.now().add(
-          Duration(minutes: _lockoutDurationMinutes),
+          const Duration(minutes: _lockoutDurationMinutes),
         );
       });
     }
@@ -245,7 +245,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+                        const Icon(Icons.warning_amber, color: Colors.orange, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -271,7 +271,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.lock_clock, color: Colors.red, size: 20),
+                        const Icon(Icons.lock_clock, color: Colors.red, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(

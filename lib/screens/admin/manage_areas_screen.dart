@@ -9,7 +9,7 @@ import '../../widgets/empty_state.dart';
 
 /// Screen for managing areas (CRUD operations)
 class ManageAreasScreen extends StatefulWidget {
-  const ManageAreasScreen({Key? key}) : super(key: key);
+  const ManageAreasScreen({super.key});
 
   @override
   State<ManageAreasScreen> createState() => _ManageAreasScreenState();
@@ -141,7 +141,7 @@ class _ManageAreasScreenState extends State<ManageAreasScreen> {
 class _AddEditAreaDialog extends StatefulWidget {
   final Area? area;
 
-  const _AddEditAreaDialog({Key? key, this.area}) : super(key: key);
+  const _AddEditAreaDialog({super.key, this.area});
 
   @override
   State<_AddEditAreaDialog> createState() => _AddEditAreaDialogState();
@@ -192,7 +192,7 @@ class _AddEditAreaDialogState extends State<_AddEditAreaDialog> {
                 children: [
                   // District dropdown
                   DropdownButtonFormField<String>(
-                    value: _selectedDistrictId,
+                    initialValue: _selectedDistrictId,
                     decoration: const InputDecoration(
                       labelText: 'District',
                       prefixIcon: Icon(Icons.map),
