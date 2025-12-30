@@ -4,12 +4,11 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import '../models/prayer_time.dart';
-import '../utils/constants.dart';
 
 /// Notification settings constants
 class NotificationSettings {
   NotificationSettings._();
-  
+
   static const int minutesBeforePrayer = 15;
   static const String channelId = 'prayer_time_channel';
   static const String channelName = 'Prayer Time Notifications';
@@ -35,7 +34,9 @@ class NotificationService {
     tz.initializeTimeZones();
 
     // Android initialization settings
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     // iOS initialization settings
     const iosSettings = DarwinInitializationSettings(
@@ -198,16 +199,18 @@ class NotificationService {
 
   /// Get active notifications (Android only)
   Future<List<ActiveNotification>> getActiveNotifications() async {
-    if (_notifications.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>() !=
+    if (_notifications
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >() !=
         null) {
       return await _notifications
               .resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin>()!
+                AndroidFlutterLocalNotificationsPlugin
+              >()!
               .getActiveNotifications() ??
           [];
     }
     return [];
   }
 }
-

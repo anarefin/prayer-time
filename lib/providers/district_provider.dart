@@ -14,12 +14,21 @@ class DistrictProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  bool _isLocationChecked = false;
+
   List<District> get districts => _districts;
   List<Area> get areasByDistrict => _areasByDistrict;
   String? get selectedDistrictId => _selectedDistrictId;
   String? get selectedAreaId => _selectedAreaId;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool get isLocationChecked => _isLocationChecked;
+
+  /// Mark location as checked
+  void markLocationChecked() {
+    _isLocationChecked = true;
+    notifyListeners();
+  }
 
   /// Get districts stream
   Stream<List<District>> get districtsStream =>
@@ -38,6 +47,8 @@ class DistrictProvider with ChangeNotifier {
 
     try {
       _districts = await _firestoreService.getDistricts();
+      // Sort alphabetically
+      _districts.sort((a, b) => a.name.compareTo(b.name));
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -56,6 +67,8 @@ class DistrictProvider with ChangeNotifier {
 
     try {
       _areasByDistrict = await _firestoreService.getAreasByDistrict(districtId);
+      // Sort alphabetically
+      _areasByDistrict.sort((a, b) => a.name.compareTo(b.name));
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -249,7 +262,7 @@ class DistrictProvider with ChangeNotifier {
       // Set selections
       _selectedDistrictId = district.id;
       _selectedAreaId = area.id;
-      
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -271,4 +284,3 @@ class DistrictProvider with ChangeNotifier {
     }
   }
 }
-

@@ -13,7 +13,7 @@ import 'mosque_list_screen.dart';
 import 'favorites_screen.dart';
 import 'nearest_mosque_screen.dart';
 import 'qibla_compass_screen.dart';
-import '../admin/admin_login_screen.dart';
+import '../admin/admin_tab.dart'; // Import AdminTab
 
 /// Redesigned Home screen with dropdown selectors
 class HomeScreenNew extends StatefulWidget {
@@ -33,25 +33,13 @@ class _HomeScreenNewState extends State<HomeScreenNew> {
       const FavoritesScreen(),
       const NearestMosqueScreen(),
       const QiblaCompassScreen(),
+      const AdminTab(), // Added Admin Tab
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_getTitle(_selectedIndex)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.admin_panel_settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AdminLoginScreen(),
-                ),
-              );
-            },
-            tooltip: 'Admin Login',
-          ),
-        ],
+        // Removed admin icon action
       ),
       body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -64,21 +52,16 @@ class _HomeScreenNewState extends State<HomeScreenNew> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).colorScheme.primary,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: 'Favorites',
           ),
+          BottomNavigationBarItem(icon: Icon(Icons.near_me), label: 'Nearby'),
+          BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Qibla'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.near_me),
-            label: 'Nearby',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.explore),
-            label: 'Qibla',
+            icon: Icon(Icons.admin_panel_settings),
+            label: 'Admin',
           ),
         ],
       ),
@@ -95,6 +78,8 @@ class _HomeScreenNewState extends State<HomeScreenNew> {
         return 'Nearby Mosques';
       case 3:
         return 'Qibla Compass';
+      case 4:
+        return 'Admin Portal';
       default:
         return 'Prayer Time';
     }
@@ -129,14 +114,14 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
       _setupConnectivityListener();
     });
   }
-  
+
   /// Set up connectivity listener to only respond to actual connectivity changes
   void _setupConnectivityListener() {
     if (!mounted || _connectivityListenerSetup) return;
     try {
       final connectivityProvider = context.read<ConnectivityProvider>();
       _previousConnectivityState = connectivityProvider.isConnected;
-      
+
       // Listen to connectivity changes via provider's notifyListeners
       connectivityProvider.addListener(_onConnectivityChanged);
       _connectivityListenerSetup = true;
@@ -144,13 +129,13 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
       debugPrint('Error setting up connectivity listener: $e');
     }
   }
-  
+
   /// Handle connectivity changes - only called when connectivity actually changes
   void _onConnectivityChanged() {
     if (!mounted) return;
     final connectivityProvider = context.read<ConnectivityProvider>();
     final isConnected = connectivityProvider.isConnected;
-    
+
     // Only respond to actual connectivity state changes
     if (_previousConnectivityState != isConnected) {
       _previousConnectivityState = isConnected;
@@ -164,14 +149,15 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
     // Remove connectivity listener
     if (_connectivityListenerSetup) {
       try {
-        context.read<ConnectivityProvider>().removeListener(_onConnectivityChanged);
+        context.read<ConnectivityProvider>().removeListener(
+          _onConnectivityChanged,
+        );
       } catch (e) {
         // Provider might already be disposed
       }
     }
     super.dispose();
   }
-
 
   @override
   void didChangeDependencies() {
@@ -184,12 +170,12 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
   void _checkConnectivityAndRefresh() {
     if (!mounted) return;
     final connectivityProvider = context.read<ConnectivityProvider>();
-    
+
     // If was offline and now online, refresh districts
     if (_wasOffline && connectivityProvider.isConnected) {
       debugPrint('📡 Connectivity restored - refreshing districts');
       _wasOffline = false;
-      
+
       // Only reload districts and preferences, do NOT trigger location detection again
       // if it has already been attempted
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -253,6 +239,13 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
     // First, load districts
     await districtProvider.loadDistricts();
 
+    // Check if we've already checked location this session
+    if (districtProvider.isLocationChecked) {
+      // Just load saved preference without checking location again
+      await _loadSavedPreference();
+      return;
+    }
+
     // Try to load saved preference first (to populate dropdowns immediately)
     final hasSavedPreference = await _loadSavedPreference();
 
@@ -263,6 +256,11 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
     } else {
       // No saved preference, do first-time auto-location
       await _attemptAutoLocation();
+    }
+
+    // Mark location as checked for this session
+    if (mounted) {
+      districtProvider.markLocationChecked();
     }
   }
 
@@ -287,7 +285,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
 
     // Check if location services are enabled first
     final isLocationEnabled = await _locationService.isLocationServiceEnabled();
-    
+
     if (!isLocationEnabled) {
       // Show location disabled dialog
       if (mounted) {
@@ -359,13 +357,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                   content: Text(
                     'Location updated to ${area.name} based on your current position.',
                   ),
-                  duration: const Duration(seconds: 4),
+                  duration: const Duration(seconds: 3),
                   backgroundColor: Colors.green,
-                  action: SnackBarAction(
-                    label: 'OK',
-                    textColor: Colors.white,
-                    onPressed: () {},
-                  ),
                 ),
               );
             }
@@ -417,7 +410,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
 
     // Check if location services are enabled first
     final isLocationEnabled = await _locationService.isLocationServiceEnabled();
-    
+
     if (!isLocationEnabled) {
       // Show location disabled dialog immediately
       if (mounted) {
@@ -454,7 +447,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                  'No nearby mosques found. Please select your area manually.'),
+                'No nearby mosques found. Please select your area manually.',
+              ),
               duration: Duration(seconds: 4),
               backgroundColor: Colors.orange,
             ),
@@ -495,13 +489,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(message),
-                duration: const Duration(seconds: 4),
+                duration: const Duration(seconds: 3),
                 backgroundColor: Colors.green,
-                action: SnackBarAction(
-                  label: 'OK',
-                  textColor: Colors.white,
-                  onPressed: () {},
-                ),
               ),
             );
           }
@@ -525,12 +514,14 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
 
       String message;
       if (e.toString().contains('permission denied')) {
-        message = 'Location permission denied. Please select your area manually.';
+        message =
+            'Location permission denied. Please select your area manually.';
       } else if (e.toString().contains('permanently denied')) {
         message =
             'Location permission permanently denied. Please enable it in settings or select your area manually.';
       } else {
-        message = 'Unable to get your location. Please select your area manually.';
+        message =
+            'Unable to get your location. Please select your area manually.';
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -564,7 +555,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
             // Welcome Banner (only shown when logged in)
             Consumer<AuthProvider>(
               builder: (context, authProvider, _) {
-                if (!authProvider.isLoggedIn || authProvider.currentUser == null) {
+                if (!authProvider.isLoggedIn ||
+                    authProvider.currentUser == null) {
                   return const SizedBox.shrink();
                 }
 
@@ -658,14 +650,18 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                                   context: context,
                                   builder: (context) => AlertDialog(
                                     title: const Text('Sign Out'),
-                                    content: const Text('Are you sure you want to sign out?'),
+                                    content: const Text(
+                                      'Are you sure you want to sign out?',
+                                    ),
                                     actions: [
                                       TextButton(
-                                        onPressed: () => Navigator.pop(context, false),
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
                                         child: const Text('Cancel'),
                                       ),
                                       ElevatedButton(
-                                        onPressed: () => Navigator.pop(context, true),
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
                                         child: const Text('Sign Out'),
                                       ),
                                     ],
@@ -675,12 +671,19 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                                   await authProvider.signOut();
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Signed out successfully')),
+                                      const SnackBar(
+                                        content: Text(
+                                          'Signed out successfully',
+                                        ),
+                                      ),
                                     );
                                   }
                                 }
                               },
-                              icon: const Icon(Icons.logout, color: Colors.white),
+                              icon: const Icon(
+                                Icons.logout,
+                                color: Colors.white,
+                              ),
                               tooltip: 'Sign Out',
                             ),
                           ],
@@ -718,15 +721,12 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                 ),
                 child: Column(
                   children: [
-                    const Icon(
-                      Icons.mosque,
-                      size: 60,
-                      color: Colors.white,
-                    ),
+                    const Icon(Icons.mosque, size: 60, color: Colors.white),
                     const SizedBox(height: 16),
                     Text(
                       'Find Prayer Times',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -760,15 +760,15 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                     Text(
                       'Select Your Location',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Choose division, district and area',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 24),
 
@@ -784,11 +784,9 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                           );
                         }
 
-                        final divisions = provider
-                            .getDistrictsByDivision()
-                            .keys
-                            .toList()
-                          ..sort();
+                        final divisions =
+                            provider.getDistrictsByDivision().keys.toList()
+                              ..sort();
 
                         return _buildDropdown(
                           icon: Icons.location_city,
@@ -811,8 +809,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                     // District Dropdown - Always visible
                     Consumer<DistrictProvider>(
                       builder: (context, provider, _) {
-                        final districtsByDivision =
-                            provider.getDistrictsByDivision();
+                        final districtsByDivision = provider
+                            .getDistrictsByDivision();
                         final districts =
                             districtsByDivision[_selectedDivision] ?? [];
                         final isEnabled = _selectedDivision != null;
@@ -825,7 +823,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                                     name: 'Select division first',
                                     divisionName: '',
                                     order: 0,
-                                  )
+                                  ),
                                 ]
                               : districts,
                           enabled: isEnabled,
@@ -859,7 +857,9 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                               child: SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
                             ),
                           );
@@ -876,7 +876,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                                     name: 'Select district first',
                                     districtId: '',
                                     order: 0,
-                                  )
+                                  ),
                                 ]
                               : areas,
                           enabled: isEnabled,
@@ -942,9 +942,9 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
             // Quick Actions
             Text(
               'Quick Actions',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Row(
@@ -958,8 +958,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                     onTap: () {
                       // Switch to nearby tab
                       if (mounted) {
-                        final homeState =
-                            context.findAncestorStateOfType<_HomeScreenNewState>();
+                        final homeState = context
+                            .findAncestorStateOfType<_HomeScreenNewState>();
                         homeState?.setState(() {
                           homeState._selectedIndex = 2;
                         });
@@ -977,8 +977,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                     onTap: () {
                       // Switch to qibla tab
                       if (mounted) {
-                        final homeState =
-                            context.findAncestorStateOfType<_HomeScreenNewState>();
+                        final homeState = context
+                            .findAncestorStateOfType<_HomeScreenNewState>();
                         homeState?.setState(() {
                           homeState._selectedIndex = 3;
                         });
@@ -1025,14 +1025,13 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                     : Colors.grey[400],
               ),
               border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             items: items.map((item) {
-              return DropdownMenuItem(
-                value: item,
-                child: Text(item),
-              );
+              return DropdownMenuItem(value: item, child: Text(item));
             }).toList(),
             onChanged: enabled ? onChanged : null,
           ),
@@ -1047,7 +1046,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
     bool enabled = true,
   }) {
     // Validate that selected district is in the list
-    final validSelectedDistrict = _selectedDistrict != null &&
+    final validSelectedDistrict =
+        _selectedDistrict != null &&
             districts.any((d) => d.id == _selectedDistrict!.id)
         ? _selectedDistrict
         : null;
@@ -1066,7 +1066,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
           opacity: enabled ? 1.0 : 0.5,
           child: DropdownButtonFormField<District>(
             key: ValueKey(
-                'district_${districts.length}_${validSelectedDistrict?.id}'),
+              'district_${districts.length}_${validSelectedDistrict?.id}',
+            ),
             initialValue: validSelectedDistrict,
             decoration: InputDecoration(
               labelText: 'District',
@@ -1077,8 +1078,10 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                     : Colors.grey[400],
               ),
               border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             items: districts.map((district) {
               return DropdownMenuItem(
@@ -1099,8 +1102,8 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
     bool enabled = true,
   }) {
     // Validate that selected area is in the list
-    final validSelectedArea = _selectedArea != null &&
-            areas.any((a) => a.id == _selectedArea!.id)
+    final validSelectedArea =
+        _selectedArea != null && areas.any((a) => a.id == _selectedArea!.id)
         ? _selectedArea
         : null;
 
@@ -1128,14 +1131,13 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
                     : Colors.grey[400],
               ),
               border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             items: areas.map((area) {
-              return DropdownMenuItem(
-                value: area,
-                child: Text(area.name),
-              );
+              return DropdownMenuItem(value: area, child: Text(area.name));
             }).toList(),
             onChanged: enabled ? onChanged : null,
           ),
@@ -1153,9 +1155,7 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
   }) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -1188,4 +1188,3 @@ class _ImprovedHomeTabState extends State<ImprovedHomeTab>
     );
   }
 }
-

@@ -9,7 +9,7 @@ import 'add_edit_mosque_screen.dart';
 
 /// Screen for managing mosques (CRUD operations)
 class ManageMosquesScreen extends StatefulWidget {
-  const ManageMosquesScreen({Key? key}) : super(key: key);
+  const ManageMosquesScreen({super.key});
 
   @override
   State<ManageMosquesScreen> createState() => _ManageMosquesScreenState();

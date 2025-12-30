@@ -10,7 +10,7 @@ import '../../widgets/loading_indicator.dart';
 class AddEditMosqueScreen extends StatefulWidget {
   final Mosque? mosque;
 
-  const AddEditMosqueScreen({Key? key, this.mosque}) : super(key: key);
+  const AddEditMosqueScreen({super.key, this.mosque});
 
   @override
   State<AddEditMosqueScreen> createState() => _AddEditMosqueScreenState();
@@ -237,7 +237,7 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Text('Division: ${_selectedDivision}'),
+                            Text('Division: $_selectedDivision'),
                             const SizedBox(height: 4),
                             Text('District: ${districtProvider.getSelectedDistrict()?.name ?? "Unknown"}'),
                             const SizedBox(height: 4),
@@ -250,7 +250,7 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
                     // Manual mode - hierarchical dropdowns
                     // Division dropdown
                     DropdownButtonFormField<String>(
-                      value: _selectedDivision,
+                      initialValue: _selectedDivision,
                       decoration: const InputDecoration(
                         labelText: 'Division *',
                         prefixIcon: Icon(Icons.map),
@@ -292,7 +292,7 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
                     // District dropdown
                     if (_selectedDivision != null) ...[
                       DropdownButtonFormField<String>(
-                        value: _selectedDistrictId,
+                        initialValue: _selectedDistrictId,
                         decoration: const InputDecoration(
                           labelText: 'District *',
                           prefixIcon: Icon(Icons.location_city),
@@ -325,7 +325,7 @@ class _AddEditMosqueScreenState extends State<AddEditMosqueScreen> {
                     // Area dropdown
                     if (_selectedDistrictId != null) ...[
                       DropdownButtonFormField<String>(
-                        value: _selectedAreaId,
+                        initialValue: _selectedAreaId,
                         decoration: const InputDecoration(
                           labelText: 'Area *',
                           prefixIcon: Icon(Icons.place),
