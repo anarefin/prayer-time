@@ -1,5 +1,5 @@
 name: prayer_time
-description: "A production-ready Flutter mobile app for Muslims to view prayer times for mosques in their area."
+description: "A production-ready Flutter mobile app for Muslims to view prayer times for mosques in their area. Now called Jamaat at Masjid."
 publish_to: 'none'
 
 version: 1.0.0+1

@@ -9,14 +9,42 @@ import 'manage_mosques_screen.dart';
 import 'manage_prayer_times_screen.dart';
 
 /// Admin dashboard with statistics and navigation
-class AdminDashboardScreen extends StatefulWidget {
+class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Dashboard'),
+        backgroundColor: const Color(0xFF1565C0),
+      ),
+      body: SafeArea(
+        child: AdminDashboardContent(
+          onLogout: () async {
+            // Sign out and pop
+            await context.read<AuthProvider>().signOut();
+            if (context.mounted) {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            }
+          },
+        ),
+      ),
+    );
+  }
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+/// Reusable Admin Dashboard Content Widget
+class AdminDashboardContent extends StatefulWidget {
+  final Future<void> Function()? onLogout;
+
+  const AdminDashboardContent({super.key, this.onLogout});
+
+  @override
+  State<AdminDashboardContent> createState() => _AdminDashboardContentState();
+}
+
+class _AdminDashboardContentState extends State<AdminDashboardContent> {
   @override
   void initState() {
     super.initState();
@@ -30,245 +58,218 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Dashboard'),
-        backgroundColor: const Color(0xFF1565C0),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _logout(context),
-            tooltip: 'Logout',
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Welcome Card
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              final user = authProvider.currentUser;
+              if (user == null) return const SizedBox();
+
+              // Extract name from email (part before @)
+              final emailName = user.email.split('@').first;
+              final displayName = emailName.isNotEmpty
+                  ? emailName[0].toUpperCase() + emailName.substring(1)
+                  : 'Admin';
+
+              return Card(
+                elevation: 4,
+                color: const Color(0xFF1565C0),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Welcome Back!',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: Colors.white.withOpacity(0.9),
+                                      ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  displayName,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  user.email,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Colors.white.withOpacity(0.8),
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Logout Button inside the card
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _logout(context),
+                          icon: const Icon(Icons.logout, color: Colors.white),
+                          label: const Text(
+                            'Logout',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.white),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+          // Statistics
+          Text(
+            'Statistics',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Consumer<DistrictProvider>(
+                  builder: (context, provider, _) => _StatCard(
+                    icon: Icons.map,
+                    title: 'Districts',
+                    count: provider.districts.length,
+                    color: Colors.purple,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Consumer<MosqueProvider>(
+                  builder: (context, provider, _) => _StatCard(
+                    icon: Icons.location_city,
+                    title: 'Areas',
+                    count: provider.areas.length,
+                    color: Colors.blue,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Consumer<MosqueProvider>(
+            builder: (context, provider, child) {
+              return _StatCard(
+                icon: Icons.mosque,
+                title: 'Mosques',
+                count: provider.mosques.length,
+                color: Colors.green,
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+          // Management options
+          Text(
+            'Management',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          _ManagementCard(
+            icon: Icons.map,
+            title: 'Manage Districts',
+            description: 'Add, edit, or delete Bangladesh districts',
+            color: Colors.purple,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ManageDistrictsScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _ManagementCard(
+            icon: Icons.location_city,
+            title: 'Manage Areas',
+            description: 'Add, edit, or delete geographical areas',
+            color: Colors.blue,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ManageAreasScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _ManagementCard(
+            icon: Icons.mosque,
+            title: 'Manage Mosques',
+            description: 'Add, edit, or delete mosques',
+            color: Colors.green,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ManageMosquesScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _ManagementCard(
+            icon: Icons.access_time,
+            title: 'Manage Prayer Times',
+            description: 'Set prayer times for mosques',
+            color: Colors.orange,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ManagePrayerTimesScreen(),
+                ),
+              );
+            },
           ),
         ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome Card
-            Consumer<AuthProvider>(
-              builder: (context, authProvider, child) {
-                final user = authProvider.currentUser;
-                if (user == null) return const SizedBox();
-                
-                // Extract name from email (part before @)
-                final emailName = user.email.split('@').first;
-                final displayName = emailName.isNotEmpty 
-                    ? emailName[0].toUpperCase() + emailName.substring(1)
-                    : 'Admin';
-                
-                return Card(
-                  elevation: 4,
-                  color: const Color(0xFF1565C0),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 32,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Welcome Back!',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                      color: Colors.white.withOpacity(0.9),
-                                    ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                displayName,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineSmall
-                                    ?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                user.email,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: Colors.white.withOpacity(0.8),
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.admin_panel_settings,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Admin',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            // Statistics
-            Text(
-              'Statistics',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Consumer<DistrictProvider>(
-                    builder: (context, provider, _) => _StatCard(
-                      icon: Icons.map,
-                      title: 'Districts',
-                      count: provider.districts.length,
-                      color: Colors.purple,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Consumer<MosqueProvider>(
-                    builder: (context, provider, _) => _StatCard(
-                      icon: Icons.location_city,
-                      title: 'Areas',
-                      count: provider.areas.length,
-                      color: Colors.blue,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Consumer<MosqueProvider>(
-              builder: (context, provider, child) {
-                return _StatCard(
-                  icon: Icons.mosque,
-                  title: 'Mosques',
-                  count: provider.mosques.length,
-                  color: Colors.green,
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            // Management options
-            Text(
-              'Management',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            _ManagementCard(
-              icon: Icons.map,
-              title: 'Manage Districts',
-              description: 'Add, edit, or delete Bangladesh districts',
-              color: Colors.purple,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ManageDistrictsScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            _ManagementCard(
-              icon: Icons.location_city,
-              title: 'Manage Areas',
-              description: 'Add, edit, or delete geographical areas',
-              color: Colors.blue,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ManageAreasScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            _ManagementCard(
-              icon: Icons.mosque,
-              title: 'Manage Mosques',
-              description: 'Add, edit, or delete mosques',
-              color: Colors.green,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ManageMosquesScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            _ManagementCard(
-              icon: Icons.access_time,
-              title: 'Manage Prayer Times',
-              description: 'Set prayer times for mosques',
-              color: Colors.orange,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ManagePrayerTimesScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-        ),
       ),
     );
   }
@@ -293,9 +294,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
 
     if (confirm == true && mounted) {
-      await context.read<AuthProvider>().signOut();
-      if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+      if (widget.onLogout != null) {
+        await widget.onLogout!();
+      } else {
+        await context.read<AuthProvider>().signOut();
       }
     }
   }
@@ -328,15 +330,12 @@ class _StatCard extends StatelessWidget {
             Text(
               count.toString(),
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
             const SizedBox(height: 4),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            Text(title, style: Theme.of(context).textTheme.bodyMedium),
           ],
         ),
       ),
@@ -388,8 +387,8 @@ class _ManagementCard extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -407,4 +406,3 @@ class _ManagementCard extends StatelessWidget {
     );
   }
 }
-

@@ -955,7 +955,7 @@ const dhakaМosques = [
   {
     name: 'Tara Masjid (Star Mosque)',
     address: 'Armanitola, Old Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Kotwali',
     latitude: 23.7172,
     longitude: 90.4138,
     hasWomenPrayer: false,
@@ -967,7 +967,7 @@ const dhakaМosques = [
   {
     name: 'Chawkbazar Shahi Mosque',
     address: 'Chawkbazar, Old Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Chawkbazar',
     latitude: 23.7160,
     longitude: 90.3950,
     hasWomenPrayer: false,
@@ -979,7 +979,7 @@ const dhakaМosques = [
   {
     name: 'Khan Mohammad Mridha Mosque',
     address: 'Lalbagh, Old Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Lalbagh',
     latitude: 23.7200,
     longitude: 90.3880,
     hasWomenPrayer: false,
@@ -991,7 +991,7 @@ const dhakaМosques = [
   {
     name: 'Lalbagh Fort Mosque',
     address: 'Lalbagh Fort, Old Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Lalbagh',
     latitude: 23.7180,
     longitude: 90.3880,
     hasWomenPrayer: false,
@@ -1003,7 +1003,7 @@ const dhakaМosques = [
   {
     name: 'Binat Bibi Mosque',
     address: 'Narinda, Old Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Sutrapur',
     latitude: 23.7100,
     longitude: 90.4200,
     hasWomenPrayer: true, // Has separate history of being built by a woman
@@ -1015,7 +1015,7 @@ const dhakaМosques = [
   {
     name: 'Boro Katra Mosque',
     address: 'Chawkbazar, Old Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Chawkbazar',
     latitude: 23.7150,
     longitude: 90.3930,
     hasWomenPrayer: false,
@@ -1027,7 +1027,7 @@ const dhakaМosques = [
   {
     name: 'Armanitola Jame Masjid',
     address: 'Armanitola, Old Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Kotwali',
     latitude: 23.7150,
     longitude: 90.4100,
     hasWomenPrayer: false,
@@ -1039,7 +1039,7 @@ const dhakaМosques = [
   {
     name: 'Hussaini Dalan (Shia)',
     address: 'Hussaini Dalan Road, Old Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Chawkbazar',
     latitude: 23.7230,
     longitude: 90.3950,
     hasWomenPrayer: true,
@@ -1051,7 +1051,7 @@ const dhakaМosques = [
   {
     name: 'Dhakeshwari Area Mosque',
     address: 'Near Dhakeshwari Temple, Old Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Lalbagh',
     latitude: 23.7220,
     longitude: 90.3900,
     hasWomenPrayer: false,
@@ -1063,7 +1063,7 @@ const dhakaМosques = [
   {
     name: 'Sardar Bari Mosque',
     address: 'Sutrapur, Old Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Sutrapur',
     latitude: 23.7050,
     longitude: 90.4150,
     hasWomenPrayer: false,
@@ -1323,7 +1323,7 @@ const dhakaМosques = [
   {
     name: 'High Court Mazar Mosque',
     address: 'High Court Area, Dhaka',
-    areaName: 'Old Dhaka', // Border
+    areaName: 'Ramna', // Refactored from Old Dhaka
     latitude: 23.7280,
     longitude: 90.4020,
     hasWomenPrayer: true,
@@ -1335,7 +1335,7 @@ const dhakaМosques = [
   {
     name: 'Dhaka University Central Mosque',
     address: 'Dhaka University, Dhaka',
-    areaName: 'Old Dhaka', // Nearby/Shahbagh
+    areaName: 'Shahbag', // Refactored from Old Dhaka
     latitude: 23.7340,
     longitude: 90.3950,
     hasWomenPrayer: true,
@@ -1371,7 +1371,7 @@ const dhakaМosques = [
   {
     name: 'Azimpur Graveyard Mosque',
     address: 'Azimpur, Dhaka',
-    areaName: 'Old Dhaka',
+    areaName: 'Lalbagh',
     latitude: 23.7250,
     longitude: 90.3850,
     hasWomenPrayer: true,

@@ -115,10 +115,40 @@ async function seedDistricts() {
   }
 }
 
+// Hardcoded Dhaka City Thanas (Administrative Units within City Corporations)
+// These are not in the standard upazila list but are crucial for urban Dhaka context.
+const dhakaThanas = [
+  // DNCC
+  { name: 'Gulshan', bnName: 'গুলশান' },
+  { name: 'Banani', bnName: 'বনানী' },
+  { name: 'Uttara', bnName: 'উত্তরা' },
+  { name: 'Mirpur', bnName: 'মিরপুর' },
+  { name: 'Mohammadpur', bnName: 'মোহাম্মদপুর' },
+  { name: 'Badda', bnName: 'বাড্ডা' },
+  { name: 'Tejgaon', bnName: 'তেজগাঁও' },
+  { name: 'Cantonment', bnName: 'ক্যান্টনমেনট' },
+  { name: 'Pallabi', bnName: 'পল্লবী' },
+  { name: 'Kafrul', bnName: 'কাফরুল' },
+  { name: 'Rampura', bnName: 'রামপুরা' },
+  { name: 'Khilkhet', bnName: 'খিলক্ষেত' },
+  // DSCC
+  { name: 'Dhanmondi', bnName: 'ধানমন্ডি' },
+  { name: 'Motijheel', bnName: 'মতিঝিল' },
+  { name: 'Ramna', bnName: 'রমনা' },
+  { name: 'Shahbag', bnName: 'শাহবাগ' },
+  { name: 'Lalbagh', bnName: 'লালবাগ' },
+  { name: 'Wari', bnName: 'ওয়ারী' },
+  { name: 'Jatrabari', bnName: 'যাত্রাবাড়ী' },
+  { name: 'Khilgaon', bnName: 'খিলগাঁও' },
+  { name: 'Kotwali', bnName: 'কোতোয়ালী' },
+  { name: 'Sutrapur', bnName: 'সূত্রাপুর' },
+  { name: 'Chawkbazar', bnName: 'চকবাজার' }
+];
+
 async function seedAreas(districtIdMap) {
   if (!districtIdMap) return;
 
-  console.log('🏘️  Starting to seed areas (Upazilas)...\n');
+  console.log('🏘️  Starting to seed areas (Upazilas & Thanas)...\n');
 
   let totalAreas = 0;
 
@@ -129,12 +159,14 @@ async function seedAreas(districtIdMap) {
       return;
     }
 
-    // We will batch process upazilas
+    // We will batch process
     // Firestore batch limit is 500 operations
     const BATCH_SIZE = 500;
     let batch = db.batch();
     let batchCount = 0;
 
+    // 1. Seed Standard Upazilas
+    console.log('   📍 Processing standard Upazilas...');
     for (const upazila of upazilasData) {
       const firestoreDistrictId = districtIdMap[upazila.district_id];
 
@@ -150,7 +182,8 @@ async function seedAreas(districtIdMap) {
         bnName: upazila.bn_name,
         districtId: firestoreDistrictId,
         url: upazila.url,
-        order: parseInt(upazila.id)
+        order: parseInt(upazila.id),
+        type: 'upazila' // Mark as standard upazila
       });
 
       totalAreas++;
@@ -164,11 +197,54 @@ async function seedAreas(districtIdMap) {
       }
     }
 
+    // 2. Seed Dhaka Thanas
+    // We need to find the Firestore ID for 'Dhaka' district.
+    // The source ID for Dhaka district in the JSON is usually known or we can look it up in districtsData.
+    // In standard nuhil/bangladesh-geocode, Dhaka district has an ID.
+    // Let's find it dynamically from the source data to be safe.
+    const dhakaDistrictSource = districtsData.find(d => d.name === 'Dhaka');
+
+    if (dhakaDistrictSource) {
+      const dhakaFirestoreId = districtIdMap[dhakaDistrictSource.id];
+
+      if (dhakaFirestoreId) {
+        console.log('   📍 Processing Dhaka City Thanas...');
+
+        for (const thana of dhakaThanas) {
+          const docRef = db.collection('areas').doc();
+
+          batch.set(docRef, {
+            name: thana.name,
+            bnName: thana.bnName,
+            districtId: dhakaFirestoreId,
+            url: '', // Thanas might not have URLs in this specific context, or we leave empty
+            order: 9000 + totalAreas, // Arbitrary high order to put them at end or distinct
+            type: 'thana' // Mark as urban thana
+          });
+
+          totalAreas++;
+          batchCount++;
+
+          if (batchCount >= BATCH_SIZE) {
+            await batch.commit();
+            console.log(`   ✓ Committed batch (${totalAreas} areas so far)`);
+            batch = db.batch();
+            batchCount = 0;
+          }
+        }
+      } else {
+        console.warn('   ⚠️  Creation of Dhaka Thanas skipped: Dhaka district ID not found in map.');
+      }
+    } else {
+      console.warn('   ⚠️  Creation of Dhaka Thanas skipped: Dhaka district not found in source data.');
+    }
+
+    // Final commit
     if (batchCount > 0) {
       await batch.commit();
     }
 
-    console.log(`\n✅ Successfully seeded ${totalAreas} areas!\n`);
+    console.log(`\n✅ Successfully seeded ${totalAreas} areas (Upazilas & Thanas)!\n`);
 
   } catch (error) {
     console.error('❌ Error seeding areas:', error);
