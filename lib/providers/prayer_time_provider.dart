@@ -1,27 +1,23 @@
 import 'package:flutter/foundation.dart';
-import 'package:permission_handler/permission_handler.dart';
+
 import '../models/prayer_time.dart';
 import '../services/firestore_service.dart';
-import '../services/notification_service.dart';
 
 /// Provider for managing prayer times state
 class PrayerTimeProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
-  final NotificationService _notificationService = NotificationService();
 
   PrayerTime? _currentPrayerTime;
   String? _selectedMosqueId;
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
   String? _errorMessage;
-  bool _notificationsEnabled = false;
 
   PrayerTime? get currentPrayerTime => _currentPrayerTime;
   String? get selectedMosqueId => _selectedMosqueId;
   DateTime get selectedDate => _selectedDate;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  bool get notificationsEnabled => _notificationsEnabled;
   String? get nextPrayer => _currentPrayerTime?.getNextPrayer();
 
   /// Get prayer time stream for selected mosque and date
@@ -38,7 +34,10 @@ class PrayerTimeProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _currentPrayerTime = await _firestoreService.getPrayerTime(mosqueId, date);
+      _currentPrayerTime = await _firestoreService.getPrayerTime(
+        mosqueId,
+        date,
+      );
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -72,13 +71,13 @@ class PrayerTimeProvider with ChangeNotifier {
 
     try {
       await _firestoreService.setPrayerTime(prayerTime);
-      
+
       // Reload if it's the currently selected prayer time
       if (_selectedMosqueId == prayerTime.mosqueId &&
           _isSameDay(_selectedDate, prayerTime.date)) {
         _currentPrayerTime = prayerTime;
       }
-      
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -98,12 +97,12 @@ class PrayerTimeProvider with ChangeNotifier {
 
     try {
       await _firestoreService.deletePrayerTime(mosqueId, date);
-      
+
       // Clear current prayer time if it was deleted
       if (_selectedMosqueId == mosqueId && _isSameDay(_selectedDate, date)) {
         _currentPrayerTime = null;
       }
-      
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -134,50 +133,6 @@ class PrayerTimeProvider with ChangeNotifier {
     }
   }
 
-  /// Enable notifications for current prayer time
-  Future<bool> enableNotifications() async {
-    if (_currentPrayerTime == null) {
-      _errorMessage = 'No prayer time selected';
-      notifyListeners();
-      return false;
-    }
-
-    try {
-      // Check and request permission
-      final permission = await _notificationService.checkNotificationPermission();
-      if (permission == PermissionStatus.denied) {
-        final newPermission = await _notificationService.requestNotificationPermission();
-        if (newPermission != PermissionStatus.granted) {
-          _errorMessage = 'Notification permission denied';
-          notifyListeners();
-          return false;
-        }
-      }
-
-      // Schedule notifications
-      await _notificationService.schedulePrayerNotifications(_currentPrayerTime!);
-      _notificationsEnabled = true;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = 'Failed to enable notifications: $e';
-      notifyListeners();
-      return false;
-    }
-  }
-
-  /// Disable notifications
-  Future<void> disableNotifications() async {
-    try {
-      await _notificationService.cancelAllNotifications();
-      _notificationsEnabled = false;
-      notifyListeners();
-    } catch (e) {
-      _errorMessage = 'Failed to disable notifications: $e';
-      notifyListeners();
-    }
-  }
-
   /// Check if two dates are the same day
   bool _isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
@@ -198,8 +153,6 @@ class PrayerTimeProvider with ChangeNotifier {
     _selectedDate = DateTime.now();
     _isLoading = false;
     _errorMessage = null;
-    _notificationsEnabled = false;
     notifyListeners();
   }
 }
-

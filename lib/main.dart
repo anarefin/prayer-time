@@ -9,7 +9,7 @@ import 'providers/mosque_provider.dart';
 import 'providers/prayer_time_provider.dart';
 import 'providers/favorites_provider.dart';
 import 'providers/connectivity_provider.dart';
-import 'services/notification_service.dart';
+
 import 'screens/public/home_screen_new.dart';
 import 'widgets/connectivity_banner.dart';
 import 'utils/theme.dart';
@@ -19,9 +19,6 @@ void main() async {
 
   // Initialize Firebase with auto-generated options
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Initialize notification service
-  await NotificationService().initialize();
 
   // Note: Districts are seeded via Node.js script (seed-bangladesh-data.js)
   // Auto-seeding disabled to avoid permission issues

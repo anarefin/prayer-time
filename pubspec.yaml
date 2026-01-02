@@ -20,13 +20,15 @@ dependencies:
   # State Management
   provider: ^6.1.1
 
+
   # Location & Sensors
   geolocator: ^11.0.0
   flutter_compass: ^0.8.0
-  permission_handler: ^11.1.0
+  permission_handler: ^11.3.0
+
 
   # Notifications
-  flutter_local_notifications: ^17.2.3
+
 
   # Utilities
   intl: ^0.19.0
